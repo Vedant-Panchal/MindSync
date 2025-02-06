@@ -1,5 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from datetime import datetime,timezone
+from pydantic import BaseModel, EmailStr, Field
+from pydantic.types import UUID4
+from typing import Optional
+from datetime import datetime
 
 class CreateUser(BaseModel):
     email: EmailStr = Field(
@@ -28,8 +30,12 @@ class UserInDB(BaseModel):
     )
     username: str = Field(
         ...,  
-        description="Enter Your User Name"
+        description="Enter Your User Name")
+    onboarding_data: Optional[dict] = Field(
+        None,
+        description="Onboarding Data"
     )
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updatedAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime
+    updated_at: datetime    
+
 

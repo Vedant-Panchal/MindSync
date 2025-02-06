@@ -1,8 +1,8 @@
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from app.core.config import jwtSecret, jwtAlgorithm
+from app.core.config import JWT_SECRET, JWT_ALGO
 from jose import jwt,JWTError
-from datetime import datetime, timedelta,timezone
+from datetime import datetime,timedelta,timezone
 from typing import List
 
 from app.db.schemas.user import UserInDB
@@ -20,8 +20,8 @@ def verify(password: str, hashed: str):
     return passlibContext.verify(password, hashed)
 
 
-def getToken(data: dict,jwtSecret: str,jwtAlgorithm: str):
-    return jwt.encode(data, jwtSecret, algorithm=jwtAlgorithm)
+def getToken(data: dict,JWT_SECRET: str,JWT_ALGO: str):
+    return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGO)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -32,7 +32,7 @@ def authMiddleware (token : str = Depends(oauth2_scheme)):
        headers={"WWW-Authenticate":"Bearer"}
     )
     try:
-       payload = jwt.decode(token, jwtSecret, algorithms=[jwtAlgorithm])
+       payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
        username: str = payload.get("sub")
        if username is None:
            raise exception
@@ -42,13 +42,14 @@ def authMiddleware (token : str = Depends(oauth2_scheme)):
 
 
 
-def createToken(data: UserInDB,expire : timedelta = None):
+def createToken(data: UserInDB,expire : int):
     toEncode = {
-        "email" : data.email
+        "email" : data.email,
+        "id": data.id
     }
-    expireIn = datetime.now(datetime.timezone.utc) + (expire if expire else timedelta(minutes=300))
+    expireIn = datetime.now(timezone.utc) + timedelta(minutes = expire)
     toEncode.update({"exp": expireIn})
-    encodeJwt = jwt.encode(toEncode,jwtSecret,jwtAlgorithm)
+    encodeJwt = jwt.encode(toEncode,JWT_SECRET,JWT_ALGO)
     print(encodeJwt)
     return encodeJwt
     
