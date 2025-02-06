@@ -38,4 +38,12 @@ class UserInDB(BaseModel):
     created_at: datetime
     updated_at: datetime    
 
-
+class userSignIN(BaseModel):
+    email: EmailStr = Field(
+        ...,  
+        description="Enter Your Email"
+    )
+    password: str = Field(
+        ...,  
+        description="Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and be at least 8 characters long."
+    )
