@@ -17,7 +17,7 @@ def hashPass(password: str):
 
 
 def verify(password: str, hashed: str):
-    return passlibContext.verify(password, hashed)
+    return passlibContext.verify(secret=password,hash=hashed)
 
 
 def getToken(data: dict,JWT_SECRET: str,JWT_ALGO: str):

@@ -38,7 +38,7 @@ class UserInDB(BaseModel):
     created_at: datetime
     updated_at: datetime    
 
-class userSignIN(BaseModel):
+class VerifyUser(BaseModel):
     email: EmailStr = Field(
         ...,  
         description="Enter Your Email"

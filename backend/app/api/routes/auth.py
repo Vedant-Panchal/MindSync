@@ -5,8 +5,9 @@ from app.core.config import EXPIRES_IN
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
-from app.db.schemas.user import UserInDB, CreateUser,userSignIN
+from app.db.schemas.user import UserInDB, CreateUser,VerifyUser
 from app.services.auth import hashPass, createToken,verify
+from app.db.schemas.supabase import SupabaseResponse
 
 router = APIRouter()
 
@@ -43,68 +44,28 @@ async def sign_up(data: CreateUser):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error while signing up: {str(e)}")
     
-# @router.post("/sign-in")
-# async def signIn(data : userSignIN):
-#     try:
-#         response = db.table("users").select("*").eq("email", data.email).execute()
-#         existing_user  : UserInDB = response.data[0] if response.data else None
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
-#     if not existing_user:
-#         raise HTTPException(status_code=400, detail="No email Exists with this User")
-#     else:
-#         print(f"""
-#         **********************************
-#             {
-#                 existing_user.password,
-#                 existing_user.email
-#              }
-#         **********************************
-#         """)
-#         userPass = existing_user.password
-#         isVerified = verify(data.password, userPass)
-#         if isVerified:
-#             token = createToken(existing_user,EXPIRES_IN)
-#             return {
-#                 "message": "User signed in successfully", 
-#                 "email": data.email,
-#                 "token": token
-#             }
-#         else:
-#             raise HTTPException(status_code=401, detail=f"Incorrect Password")
-
 @router.post("/sign-in")
-async def signIn(data: userSignIN):
+async def signIn(data: VerifyUser):
     try:
-        # Fetch user data including password
-        response = db.table("users").select("*").eq("email", data.email).execute()
-
-        # Ensure data exists
-        if not response.data:
-            raise HTTPException(status_code=400, detail="No email exists with this user")
-
-        # Extract user data (first element of response.data list)
-        existing_user = response.data[0]
-
+        response: SupabaseResponse = db.table("users").select("*").eq("email", data.email).execute()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
+        return HTTPException(status_code=500, detail=f"Database query failed")
 
-    # Verify password
-    print(f"""
-        **********************************
-            {existing_user["password"]}
-        **********************************
-        """)
-    is_verified = verify(data.password, existing_user["password"])
+    if not response.data:
+        return HTTPException(status_code=400, detail="No email exists with this user")
+
+    existing_user = UserInDB(**response.data[0])
+
+    is_verified = verify(data.password,existing_user.password)
     if is_verified:
         token = createToken(existing_user, EXPIRES_IN)
-        return {
+        return {    
             "message": "User signed in successfully",
             "email": data.email,
             "token": token
         }
     else:
-        raise HTTPException(status_code=401, detail="Incorrect Password")
+        return HTTPException(status_code=401, detail="Incorrect Password")
 
 
 
