@@ -36,7 +36,11 @@ class UserInDB(BaseModel):
         description="Onboarding Data"
     )
     created_at: datetime
-    updated_at: datetime    
+    updated_at: datetime
+    is_verified: bool = Field(
+        False,
+        description="User Verification Status"
+    )
 
 class VerifyUser(BaseModel):
     email: EmailStr = Field(
