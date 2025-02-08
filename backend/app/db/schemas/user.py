@@ -13,6 +13,10 @@ class create_user(BaseModel):
     username: str = Field(
         ...,  # Required field
         description="Enter Your User Name"
+    ),
+    otp : str = Field(
+        ...,
+        min_length=6
     )
 
 class UserInDB(BaseModel):
@@ -58,7 +62,10 @@ class verify_otp(BaseModel):
     entered_password : str
 
 
-class verify_otp_response:
+class verify_otp_response(BaseModel):
     message: str
     email: str
     token: str
+
+class SignUpType(BaseModel):
+    email : str

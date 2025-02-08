@@ -1,14 +1,13 @@
 from tkinter import N
-from fastapi import APIRouter, Cookie, HTTPException, Header, responses, status
+from typing import Dict
+from fastapi import APIRouter, Cookie, HTTPException,responses,Response, Header, status
 from uuid import uuid4
 from datetime import datetime, timezone
-
-from h11 import Response
 from app.core.config import EXPIRES_IN
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
-from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest,verify_otp_response
+from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest,verify_otp_response,SignUpType
 from app.services.auth import hashPass, create_token,verify
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
@@ -19,73 +18,102 @@ router = APIRouter()
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
-@router.post("/sign-up",response_model= None)
-async def sign_up(email : str,response : Response):
+
+router = APIRouter()
+
+@router.post("/sign-up", response_model=Dict[str, str])
+async def sign_up(data: SignUpType, response: Response):
     try:
-        existing_user = db.table("users").select("*").eq("email",email).execute()
+        existing_user = db.table("users").select("*").eq("email", data.email).execute()
+        
+        if existing_user.data:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="User already exists"
+            )
+        
+        otp = str(uuid4().int)[:6]
+        send_otp_email(data.email, otp)
+        otp_token = generate_otp_jwt(data.email, otp)
+        
+        response.set_cookie(
+            key="sign_up_token",
+            value=otp_token,
+            max_age=600,
+            httponly=True,
+            secure=False,
+            samesite="Lax"
+        )
+        print(response.headers)
+
+        
+        return responses.JSONResponse(
+            content={"message": "OTP Sent Successfully"},
+            status_code=status.HTTP_200_OK
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        return HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
-    if existing_user.data:
-        return HTTPException(status_code=400, detail="User already exists")
-    otp = str(uuid4().int)[:6]
-    otp_token = generate_otp_jwt(email, otp)
-    response.set_cookie(
-        key="sign_up_token",
-        value=otp_token,
-        max_age=600,
-        httponly=True,
-        secure=True,
-        samesite="Lax"
-    )
-    send_otp_email(email, otp)
-    return{
-        "message" : "OTP Sent Successfully"
-    }
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Database query failed: {str(e)}"
+        )
 
-@router.post("/verify-otp",response_model=None)
-async def verify_otp(response:Response,data : create_user,entered_otp: str,sign_up_token: str | None = Cookie(None),):
+@router.post("/verify-otp", response_model=Dict[str, str])
+async def verify_otp(
+    response: Response,
+    data: create_user,
+    sign_up_token: str | None = Cookie(None)
+):
     if not sign_up_token:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OTP token missing in cookies")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="OTP token missing in cookies"
+        )
     
-    otpData = verify_otp(
-        otp_token=sign_up_token,
-        entered_otp=entered_otp
-    )
-    email = verify_token(otpData)
-    hash_password = hashPass(data.password)
-    user = UserInDB(
-        id=str(uuid4()),
-        email = email,
-        username=data.username,
-        password=hash_password,
-        created_at=datetime.now(timezone.utc),
-        updated_at=datetime.now(timezone.utc),
-        is_verified=True,
-    )
-
     try:
-        user_token = create_token(user,EXPIRES_IN)
+        otpData = verify_otp(
+            otp_token=sign_up_token,
+            entered_otp=data.otp
+        )
+        email = verify_token(otpData)
+        hash_password = hashPass(data.password)
+        
+        user = UserInDB(
+            id=str(uuid4()),
+            email=email,
+            username=data.username,
+            password=hash_password,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            is_verified=True,
+        )
 
+        user_token = create_token(user, EXPIRES_IN)
         db.table("users").insert(jsonable_encoder(user)).execute()
 
         response.delete_cookie("sign_up_token")
-
         response.set_cookie(
-        key="user_token",
-        value=user_token,
-        max_age=691200,
-        httponly=True,
-        secure=True,
-        samesite="Lax"
+            key="user_token",
+            value=user_token,
+            max_age=691200,
+            httponly=True,
+            secure=True,
+            samesite="Lax"
         )
+        
         return {
-        "message" : "User created successfully. Check your email for OTP verification.", 
-        "email" :  email,
-        "token" :  user_token,
+            "message": "User created successfully. Check your email for OTP verification.",
+            "email": email,
+            "token": user_token,
         }
+        
     except Exception as e:
-        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while signing up: {str(e)}")
-
+        return HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Error while signing up: {str(e)}"
+        )
 @router.post("/sign-in")
 async def signIn(data: VerifyUser):
     try:
@@ -113,7 +141,7 @@ async def signIn(data: VerifyUser):
         return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password")
 
 @router.post("/reset-password")
-async def generatePasswordOtp(email : str):
+async def reset_password(email : str):
     try:
         response = db.table("users").select("*").eq("email",email).execute()
     except Exception as e:
@@ -130,7 +158,7 @@ async def generatePasswordOtp(email : str):
         }
 
 @router.put("/reset-password")
-async def resetPassword(
+async def reset_password(
     data: ResetPasswordRequest,
     authorization: str|None = Header(None)):
 

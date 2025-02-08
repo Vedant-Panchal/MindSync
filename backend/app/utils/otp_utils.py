@@ -29,10 +29,11 @@ def verify_token(data : verify_otp):
         email = decoded_payload["email"]
         otp = decoded_payload["otp"]
         exp = decoded_payload["exp"]
+        print(email)
         return email
     except Exception as e:
-            return e
+        return e
     if otp != data.entered_password:
-                return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
     if exp < datetime.now(timezone.utc).timestamp():
-                return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
