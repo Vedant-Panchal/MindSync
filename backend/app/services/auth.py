@@ -20,12 +20,12 @@ def verify(password: str, hashed: str):
     return passlibContext.verify(secret=password,hash=hashed)
 
 
-def getToken(data: dict,JWT_SECRET: str,JWT_ALGO: str):
+def get_token(data: dict,JWT_SECRET: str,JWT_ALGO: str):
     return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGO)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def authMiddleware (token : str = Depends(oauth2_scheme)):
+def auth_middleware (token : str = Depends(oauth2_scheme)):
     exception  = HTTPException(
        status_code= 401 ,
        detail="Could not validate credentials",
@@ -42,7 +42,7 @@ def authMiddleware (token : str = Depends(oauth2_scheme)):
 
 
 
-def createToken(data: UserInDB,expire : int):
+def create_token(data: UserInDB,expire : int):
     toEncode = {
         "email" : data.email,
         "id": data.id

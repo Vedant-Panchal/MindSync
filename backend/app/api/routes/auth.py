@@ -1,56 +1,91 @@
-from fastapi import APIRouter, HTTPException, Header, status
+from tkinter import N
+from fastapi import APIRouter, Cookie, HTTPException, Header, responses, status
 from uuid import uuid4
 from datetime import datetime, timezone
+
+from h11 import Response
 from app.core.config import EXPIRES_IN
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
-from app.db.schemas.user import UserInDB, CreateUser, VerifyUser, ResetPasswordRequest
-from app.services.auth import hashPass, createToken, verify
+from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest,verify_otp_response
+from app.services.auth import hashPass, create_token,verify
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
-from app.utils.otp_utils import decode_otp_jwt, generate_otp_jwt
+from app.utils.otp_utils import decode_otp_jwt, generate_otp_jwt, verify_token
+
 router = APIRouter()
 
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
-@router.post("/sign-up")
-async def sign_up(data: CreateUser):
+@router.post("/sign-up",response_model= None)
+async def sign_up(email : str,response : Response):
     try:
-        existing_user = db.table("users").select("*").eq("email", data.email).execute()
+        existing_user = db.table("users").select("*").eq("email",email).execute()
     except Exception as e:
         return HTTPException(status_code=500, detail=f"Database query failed: {str(e)}")
     if existing_user.data:
         return HTTPException(status_code=400, detail="User already exists")
-    if not re.fullmatch(PASSWORD_REGEX, data.password):
-        return HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
     otp = str(uuid4().int)[:6]
+    otp_token = generate_otp_jwt(email, otp)
+    response.set_cookie(
+        key="sign_up_token",
+        value=otp_token,
+        max_age=600,
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+    )
+    send_otp_email(email, otp)
+    return{
+        "message" : "OTP Sent Successfully"
+    }
+
+@router.post("/verify-otp",response_model=None)
+async def verify_otp(response:Response,data : create_user,entered_otp: str,sign_up_token: str | None = Cookie(None),):
+    if not sign_up_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OTP token missing in cookies")
+    
+    otpData = verify_otp(
+        otp_token=sign_up_token,
+        entered_otp=entered_otp
+    )
+    email = verify_token(otpData)
     hash_password = hashPass(data.password)
-    otp_token = generate_otp_jwt(data.email, otp)
     user = UserInDB(
         id=str(uuid4()),
-        email=data.email,
+        email = email,
         username=data.username,
         password=hash_password,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
-        is_verified=False,
+        is_verified=True,
     )
 
-    # Insert user into DB with JSON serialization
     try:
+        user_token = create_token(user,EXPIRES_IN)
+
         db.table("users").insert(jsonable_encoder(user)).execute()
-        send_otp_email(data.email, otp)
+
+        response.delete_cookie("sign_up_token")
+
+        response.set_cookie(
+        key="user_token",
+        value=user_token,
+        max_age=691200,
+        httponly=True,
+        secure=True,
+        samesite="Lax"
+        )
         return {
-        "message": "User created successfully. Check your email for OTP verification.", 
-        "email": data.email,
-        # "token": createToken(user, EXPIRES_IN),
-        "otp_token": otp_token
+        "message" : "User created successfully. Check your email for OTP verification.", 
+        "email" :  email,
+        "token" :  user_token,
         }
     except Exception as e:
         return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while signing up: {str(e)}")
-    
+
 @router.post("/sign-in")
 async def signIn(data: VerifyUser):
     try:
@@ -68,7 +103,7 @@ async def signIn(data: VerifyUser):
     
     is_verified = verify(data.password,existing_user.password)
     if is_verified:
-        token = createToken(existing_user, EXPIRES_IN)
+        token = create_token(existing_user, EXPIRES_IN)
         return {    
             "message": "User signed in successfully",
             "email": data.email,
@@ -76,44 +111,6 @@ async def signIn(data: VerifyUser):
         }
     else:
         return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password")
-
-@router.post("/verify-otp")
-async def verify_otp(otp_token: str, entered_otp: str):
-    # Decode the OTP JWT
-    try:
-        decoded_payload = decode_otp_jwt(otp_token)
-        email = decoded_payload["email"]
-        otp = decoded_payload["otp"]
-        exp= decoded_payload["exp"]
-    except ValueError as e:
-        return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-
-    # Validate OTP manually
-    if otp != entered_otp:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
-    
-    if exp < datetime.now(timezone.utc).timestamp():
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
-    # Fetch user and verify account
-    response = db.table("users").select("*").eq("email", email).execute()
-    if not response.data:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
-
-    user = UserInDB(**response.data[0])
-    
-
-    if user.is_verified:
-        return {
-            "message": "User is already verified"
-            }
-
-    # Mark user as verified
-    db.table("users").update({"is_verified": True}).eq("email", email).execute()
-    return {
-        "message": "User verified successfully",
-        "email": email,
-        "decoded_otp":otp
-        }
 
 @router.post("/reset-password")
 async def generatePasswordOtp(email : str):
@@ -144,45 +141,50 @@ async def resetPassword(
     
     token = authorization.split(" ")[1]
     
-    try: 
-        decoded_payload = decode_otp_jwt(token)
-        print(f"""
-        **********************************
-        {decoded_payload}
-        **********************************
-        """)
-        email = decoded_payload["email"]
-        otp = decoded_payload["otp"]
-        exp = decoded_payload["exp"]
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    # try: 
+    #     decoded_payload = decode_otp_jwt(token)
+    #     print(f"""
+    #     **********************************
+    #     {decoded_payload}
+    #     **********************************
+    #     """)
+    #     token = authorization.split(" ")[1]
+        # try: 
+        #     decoded_payload = decode_otp_jwt(token)
+        #     email = decoded_payload["email"]
+        #     otp = decoded_payload["otp"]
+        #     exp = decoded_payload["exp"]
+        # except Exception as e:
+        #     return e
+        #     # return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        # if otp != entered_otp:
+        #     return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
     
-    if otp != entered_otp:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
-    
-    if exp < datetime.now(timezone.utc).timestamp():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
-    
+        # if exp < datetime.now(timezone.utc).timestamp():
+        #     return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
+    data = verify_otp(
+        otp_token=token,
+        entered_otp=entered_otp
+    )
+    email = verify_token(data)
     try:
-        response = db.table("users").select("*").eq("email", email).execute()
+        response = db.table("users").select("*").eq("email",email).execute()
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Error occurred while fetching data")
-    
+        return HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT,detail="Error Ocurred While Fetching Data")
     if not response.data:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No user exists with this email")
+        return HTTPException(status_code=status.HTTP_409_CONFLICT,detail="No User Exists With This Email")
     else:
         existingUser = UserInDB(**response.data[0])
-        
         if not re.fullmatch(PASSWORD_REGEX, newPassword):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
-        
+            return HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
+
         hashedPassword = hashPass(newPassword)
-        
         try:
             db.table("users").update({"password": hashedPassword}).eq("email", email).execute()
-            return {
-                "message": "Password updated successfully"
+            return{
+                "message" : "Password Updated Successfully"
             }
         except:
-            raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Error occurred while updating password")
+            return HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT,detail="Error Ocurred While Updating Password")
+
 

@@ -4,11 +4,7 @@ from pydantic.types import UUID4
 from typing import Annotated, Optional
 from datetime import datetime
 
-class CreateUser(BaseModel):
-    email: EmailStr = Field(
-        ...,  # Required field
-        description="Enter Your Email"
-    )
+class create_user(BaseModel):
     password: str = Field(
         ...,  # Required field
         min_length=8,
@@ -55,3 +51,14 @@ class VerifyUser(BaseModel):
 class ResetPasswordRequest(BaseModel):
     entered_otp: str
     new_password: str
+
+
+class verify_otp(BaseModel):
+    token : str
+    entered_password : str
+
+
+class verify_otp_response:
+    message: str
+    email: str
+    token: str
