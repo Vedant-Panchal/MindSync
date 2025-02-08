@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from tkinter import NO
+from fastapi import APIRouter, HTTPException, Header,status
 from uuid import uuid4
 from datetime import datetime,timezone
 from app.core.config import EXPIRES_IN, OTP_EXPIRY_MINS
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
-from app.db.schemas.user import UserInDB, CreateUser,VerifyUser
+from app.db.schemas.user import UserInDB, CreateUser,VerifyUser,ResetPasswordRequest
 from app.services.auth import hashPass, createToken,verify
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
@@ -46,18 +47,18 @@ async def sign_up(data: CreateUser):
         return {
         "message": "User created successfully. Check your email for OTP verification.", 
         "email": data.email,
-        "token": createToken(user, EXPIRES_IN),
+        # "token": createToken(user, EXPIRES_IN),
         "otp_token": otp_token
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error while signing up: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while signing up: {str(e)}")
     
 @router.post("/sign-in")
 async def signIn(data: VerifyUser):
     try:
         response: SupabaseResponse = db.table("users").select("*").eq("email", data.email).execute()
     except Exception as e:
-        return HTTPException(status_code=500, detail=f"Database query failed")
+        return HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database query failed")
 
     if not response.data:
         return HTTPException(status_code=400, detail="No email exists with this user")
@@ -76,7 +77,7 @@ async def signIn(data: VerifyUser):
             "token": token
         }
     else:
-        return HTTPException(status_code=401, detail="Incorrect Password")
+        return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password")
 
 @router.post("/verify-otp")
 async def verify_otp(otp_token: str, entered_otp: str):
@@ -87,20 +88,21 @@ async def verify_otp(otp_token: str, entered_otp: str):
         otp = decoded_payload["otp"]
         exp= decoded_payload["exp"]
     except ValueError as e:
-        return HTTPException(status_code=401, detail=str(e))
+        return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
     # Validate OTP manually
     if otp != entered_otp:
-        return HTTPException(status_code=400, detail="Incorrect OTP")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
     
     if exp < datetime.now(timezone.utc).timestamp():
-        return HTTPException(status_code=400, detail="OTP has expired. Please request a new OTP")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
     # Fetch user and verify account
     response = db.table("users").select("*").eq("email", email).execute()
     if not response.data:
-        return HTTPException(status_code=400, detail="User not found")
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not found")
 
     user = UserInDB(**response.data[0])
+    
 
     if user.is_verified:
         return {
@@ -114,3 +116,60 @@ async def verify_otp(otp_token: str, entered_otp: str):
         "email": email,
         "decoded_otp":otp
         }
+
+# @router.post("/reset-password")
+# async def generatePasswordOtp(email : str):
+#     try:
+#         response = db.table("users").select("*").eq("email",email).execute()
+#     except Exception as e:
+#         return HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT,detail="Error Ocurred While Fetching Data")
+#     if not response.data:
+#         return HTTPException(status_code=status.HTTP_409_CONFLICT,detail="No User Exists With This Email")
+#     else:
+#         otp = str(uuid4().int)[:6]
+#         send_otp_email(email, otp)
+#         otpToken = generate_otp_jwt(email,otp)
+#         return {
+#             "message" : "OTP Sent Successfully",
+#             "token" : otpToken
+#         }
+# @router.put("/reset-password")
+# async def resetPassword(
+#     entered_otp : str,
+#     newPassword : str,
+#     authorization : str =  Header(None)):
+#     if not authorization or not authorization.startswith("Bearer "):
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header missing or invalid")
+#     else:
+#         token = authorization.split(" ")[1]
+#         try: 
+#             decoded_payload = decode_otp_jwt(token)
+#             email = decoded_payload["email"]
+#             otp = decoded_payload["otp"]
+#             exp = decoded_payload["exp"]
+#         except ValueError as e:
+#             return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+#         if otp != entered_otp:
+#             return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect OTP")
+    
+#         if exp < datetime.now(timezone.utc).timestamp():
+#             return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired. Please request a new OTP")
+#         try:
+#             response = db.table("users").select("*").eq("email",email).execute()
+#         except Exception as e:
+#             return HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT,detail="Error Ocurred While Fetching Data")
+#         if not response.data:
+#             return HTTPException(status_code=status.HTTP_409_CONFLICT,detail="No User Exists With This Email")
+#         else:
+#             existingUser = UserInDB(**response.data[0])
+#             if not re.fullmatch(PASSWORD_REGEX, newPassword):
+#                 return HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
+
+#             hashedPassword = hashPass(newPassword)
+#             try:
+#                 db.table("users").update({"password": hashedPassword}).eq("email", email).execute()
+#                 return{
+#                     "message" : "Password Updated Successfully"
+#                 }
+#             except:
+#                 return HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT,detail="Error Ocurred While Updating Password")

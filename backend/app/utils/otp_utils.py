@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError
+from jose import jwt
+from jose.exceptions import JWTError,ExpiredSignatureError
 from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS
 
 # def create_otp_token(email: str, otp: str) -> str:
@@ -27,7 +28,7 @@ def decode_otp_jwt(token: str) -> dict:
     """Decode the OTP JWT and validate."""
     try:
         return jwt.decode(token, JWT_SECRET, algorithms=JWT_ALGO)
-    except jwt.ExpiredSignatureError:
-        raise ValueError("OTP has expired")
-    except jwt.InvalidTokenError:
-        raise ValueError("Invalid OTP token")
+    except ExpiredSignatureError:
+        return ValueError("OTP has expired")
+    except JWTError():
+        return ValueError("Invalid OTP token")
