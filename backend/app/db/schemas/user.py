@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
+from fastapi import Header
 from pydantic.types import UUID4
-from typing import Optional
+from typing import Annotated, Optional
 from datetime import datetime
 
 class CreateUser(BaseModel):

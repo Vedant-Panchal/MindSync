@@ -11,55 +11,45 @@ def send_otp_email(email: str, otp: str):
         "from": "no-reply@flamin.live",
         "to": [email],
         "subject": "Your OTP for Account Verification",
-        "html": f"""
-        <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Email Verification</title>
-</head>
-<body style="background-color: #F9FAFB; font-family: sans-serif; color: #374151; padding: 0; margin: 0;">
-  <div style="max-width: 600px; margin: 40px auto; padding: 32px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);">
-    <header style="text-align: center;">
-      <div style="font-size: 32px; font-weight: bold; color: #1F2937;">MindSync</div>
-    </header>
+        "html": 
+        f"""
+        <!doctype html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Welcome to MindSync</title>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: Arial, sans-serif;">
+            <div style="max-width: 600px; margin: 30px auto; padding: 24px; background-color: #ffffff; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);">
+              <header style="text-align: center;">
+                <h1 style="margin: 0; font-size: 40px; font-family: 'Abril Fatface', serif; color: #0f172a; font-weight: 900;">MindSync</h1>
+                <p style="margin: 8px 0 0; font-size: 18px; color: #64748b;">Empowering Your Mind, One Step at a Time 🚀</p>
+              </header>
 
-    <main style="margin-top: 32px;">
-      <h2 style="color: #374151;">Hey!</h2>
+              <main style="margin-top: 24px; text-align: center;">
+                <p style="margin: 15px 0; font-size: 18px; color: #475569;">Welcome aboard! We're excited to have you as part of our growing community. Please verify your email by using the code below:</p>
 
-      <p style="margin-top: 8px; line-height: 1.6; color: #6B7280;">
-        This is your verification code
-      </p>
+                <div style="margin: 24px 0; display: inline-block; padding: 12px 24px; background-color: #1e293b; border-radius: 8px;">
+                  <p style="margin: 0; font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: 8px;">{otp}</p>
+                </div>
 
-      <div style="margin-top: 16px; text-align: center;">
-        <p style="display: inline-block; font-size: 32px; font-weight: bold; background-color: #2563EB; color: #ffffff; padding: 12px 24px; border-radius: 12px; letter-spacing: 4px;">
-          {otp}
-        </p>
-      </div>
+                <p style="margin: 16px 0; font-size: 16px; color: #475569;">This code is valid for the next <strong>10 minutes</strong>. If it doesn't work, you can request a new one by clicking the button below.</p>
 
-      <p style="margin-top: 16px; line-height: 1.6; color: #6B7280;">
-        This code will only be valid for the next <span style="font-weight: bold;">10 minutes.</span> If the code does not work, you can resend the verification code.
-      </p>
+                <a href="https://mindsync.com/resend-code" style="display: inline-block; margin-top: 24px; padding: 12px 24px; background-color: #1e40af; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: 700; border-radius: 6px; box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);">
+                  Resend Code
+                </a>
+              </main>
 
-      <div style="margin-top: 24px; text-align: center;">
-        <a href="#" style="display: inline-block; padding: 12px 24px; font-size: 14px; font-weight: 600; background-color: #2563EB; color: white; text-decoration: none; border-radius: 8px;">Resend OTP</a>
-      </div>
+              <footer style="margin-top: 32px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                <p style="margin: 0; font-size: 14px; color: #64748b;">Thanks for choosing MindSync! We're here to support you every step of the way. 😊</p>
+                <p style="margin: 10px 0 0; font-size: 14px; color: #64748b;">© 2025 MindSync. All rights reserved.</p>
+              </footer>
+            </div>
+          </body>
+        </html>
 
-      <p style="margin-top: 32px; color: #6B7280;">
-        Thanks, <br>
-        MindSync Team
-      </p>
-    </main>
-
-    <footer style="margin-top: 32px; text-align: center;">
-      <p style="color: #9CA3AF;">© 2025 MindSync. All Rights Reserved.</p>
-    </footer>
-  </div>
-</body>
-</html>
-
-        """
+         """
     }
     response = requests.post(url, headers=headers, json=payload)
     

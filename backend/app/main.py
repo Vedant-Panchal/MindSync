@@ -3,7 +3,7 @@ from app.api.routes import auth
 
 app = FastAPI()
 
-app.include_router(auth.router)
+app.include_router(auth.router,prefix="/auth",tags=["Authentication"])
 
 @app.get("/")
 def read_root():
