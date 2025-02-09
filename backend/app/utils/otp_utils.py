@@ -3,7 +3,7 @@ from fastapi import HTTPException,status
 from jose import jwt
 from jose.exceptions import JWTError,ExpiredSignatureError
 from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS
-from app.db.schemas.user import verify_otp
+from app.db.schemas.user import verify_otp_response, verify_otp_type
 
 def generate_otp_jwt(email: str, otp: str) -> str:
     
@@ -23,7 +23,7 @@ def decode_otp_jwt(token: str) -> dict:
     except JWTError:
         raise ValueError("Invalid OTP token")
     
-def verify_token(data : verify_otp):
+def verify_token(data : verify_otp_type):
     try: 
         decoded_payload = decode_otp_jwt(data.token)
         email = decoded_payload["email"]

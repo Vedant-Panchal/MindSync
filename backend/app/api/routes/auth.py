@@ -7,7 +7,7 @@ from app.core.config import EXPIRES_IN
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
-from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest,verify_otp_response,SignUpType
+from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest,SignUpType,verify_otp_type
 from app.services.auth import hashPass, create_token,verify
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
@@ -73,7 +73,8 @@ async def verify_otp(
         )
     
     try:
-        otpData = verify_otp(
+        print(sign_up_token)
+        otpData = verify_otp_type()(
             otp_token=sign_up_token,
             entered_otp=data.otp
         )
