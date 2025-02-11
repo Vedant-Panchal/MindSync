@@ -9,7 +9,3 @@ SUPBASE_KEY: str = os.getenv("SUPABASE_KEY")
 RESEND_KEY:str = os.getenv("RESEND_API_KEY")
 OTP_EXPIRY_MINS:int = 10
 ENCRYPTION_KEY:str = os.getenv("ENCRYPTION_KEY").encode()
-#         **********************************
-
-#         **********************************
-#         """)

@@ -8,9 +8,9 @@ def send_otp_email(email: str, otp: str):
         "Content-Type": "application/json"
     }
     payload = {
-        "from": "no-reply@flamin.live",
+        "from": "MindSync <no-reply@flamin.live>",
         "to": [email],
-        "subject": "Your OTP for Account Verification",
+        "subject": "Your verification code for MindSync",
         "html": 
         f"""
         <!doctype html>

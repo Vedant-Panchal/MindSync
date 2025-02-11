@@ -113,27 +113,18 @@ async def verify_otp(
         }
         
     except Exception as e:
-        # raise HTTPException(
-        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-        #     detail=f"Error while signing up"
-        # )
-        # raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail=f"Error while signing up: {str(e)}"
         )
-        # return responses.JSONResponse(
-        # # status_code=500,
-        # # content={"message": "Error while signing up", "statuscode": 500}
-        # # )
 
 @router.post("/sign-in")
 async def signIn(response: Response,data: VerifyUser):
     user = check_user_present(data.email)
-    if not user.data:
+    if not user:
         raise HTTPException(status_code=400, detail="No email exists with this user")
 
-    existing_user = UserInDB(**user.data[0])
+    existing_user = UserInDB(**user[0])
     
     if not existing_user.is_verified:
         raise HTTPException(status_code=401, detail="User is not verified. Please complete OTP verification")
@@ -162,6 +153,7 @@ async def signIn(response: Response,data: VerifyUser):
 @router.post("/reset-password",response_model=None)
 async def reset_password(response : Response,email : EmailStr):
     user_data = check_user_present(email)
+    print(user_data)
     if not user_data:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="No User Exists With This Email")
     else:
@@ -169,10 +161,11 @@ async def reset_password(response : Response,email : EmailStr):
             raise TypeError("Response object is not an instance of fastapi.Response")
         otp = str(uuid4().int)[:6]
         send_otp_email(email, otp)
-        otpToken = generate_otp_jwt(email,otp)
+        otp_token = generate_otp_jwt(email,otp)
+        encrypted_token = encrypt_jwt(otp_token)
         response.set_cookie(
             key="reset_password_token",
-            value = otpToken,
+            value = encrypted_token,
             max_age=600,
             httponly=True,
             secure=False,
@@ -181,7 +174,7 @@ async def reset_password(response : Response,email : EmailStr):
         print(response.headers)
         return {
             "message" : "OTP Sent Successfully",
-            "token" : otpToken
+            "token" : encrypted_token
         }
 
 @router.put("/reset-password")
@@ -198,17 +191,16 @@ async def reset_password(
             status_code=status.HTTP_401_UNAUTHORIZED, 
             detail="OTP token missing in cookies"
         )
-    
+    otp_token = decrypt_jwt(reset_password_token)
     token_data = verify_otp_type(
-        token=reset_password_token,
+        token=otp_token,
         otp=entered_otp
     )
     email = verify_token(token_data)
     userData = check_user_present(email)
-    if not userData.data:
+    if not userData:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,detail="No User Exists With This Email")
     else:
-        existingUser = UserInDB(**userData.data[0])
         if not re.fullmatch(PASSWORD_REGEX, newPassword):
             raise HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
 
