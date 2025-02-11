@@ -1,17 +1,12 @@
 from datetime import datetime, timedelta, timezone
-from email.policy import HTTP
-import json
-import os
+from cryptography.fernet import Fernet
 from fastapi import HTTPException,status
-from jose import jwt,jwe
+from jose import jwt
 from jose.exceptions import JWTError,ExpiredSignatureError
-from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS,JWE_ALGORITHM,JWE_SECRET
-from app.db.schemas.user import verify_otp_response, verify_otp_type
-import binascii
-from secrets import token_hex
+from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS,ENCRYPTION_KEY
+from app.db.schemas.user import verify_otp_type
 
-
-JWE_SECRET_BYTE  = "mDZY-PRzpXzsUgSQ51u3GwnyQXLtph_-GSEZZ1TjUtA"
+fernet = Fernet(ENCRYPTION_KEY)
 
 def generate_otp_jwt(email: str, otp: str) -> str:
     
@@ -52,15 +47,14 @@ def verify_token(data : verify_otp_type):
 
 def encrypt_jwt(token : str):
    try:
-        
-        encrypted_otp = jwe.encrypt(json.dumps(token).encode(), JWE_SECRET_BYTE, algorithm=JWE_ALGORITHM)
+        encrypted_otp = fernet.encrypt(token.encode())
         return encrypted_otp.decode()
    except Exception as e:
        raise e
     #    raise HTTPException(status.HTTP_400_BAD_REQUEST,detail = "Error While Enctrypting Token")
 def decrypt_jwt(token : str):
     try:
-        decrypted_jwt = jwe.decrypt(token.encode(), JWE_SECRET_BYTE).decode()
+        decrypted_jwt = fernet.decrypt(token.encode()).decode()
         return decrypted_jwt
     except Exception as e:
        raise e

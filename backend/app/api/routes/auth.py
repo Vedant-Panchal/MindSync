@@ -19,7 +19,6 @@ from app.utils.otp_utils import generate_otp_jwt, verify_token,encrypt_jwt,decry
 from app.core.config import JWT_SECRET
 router = APIRouter()
 
-JWE_ENC_KEY = JWT_SECRET[:32]
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
 
@@ -36,10 +35,10 @@ async def sign_up(response: Response,data: SignUpType):
             )
         
         otp:str = str(uuid4().int)[:6]
-        send_otp_email(data.email, otp)
         otp_token:str = generate_otp_jwt(data.email, otp)
         encrypted_token = encrypt_jwt(otp_token)
-        print("encrypted t0oken : " ,encrypted_token)
+        print("encrypted token : " ,encrypted_token)
+        send_otp_email(data.email, otp)
         response.set_cookie(
             key="signup_token",
             value=encrypted_token,
@@ -95,13 +94,13 @@ async def verify_otp(
             is_verified=True,
         )
 
-        user_token = create_token(user, EXPIRES_IN)
+        access_token = create_token(user, EXPIRES_IN)
         db.table("users").insert(jsonable_encoder(user)).execute()
 
         response.delete_cookie("signup_token")
         response.set_cookie(
-            key="user_token",
-            value=user_token,
+            key="access_token",
+            value=access_token,
             max_age=691200,
             httponly=True,
             secure=False,
@@ -110,7 +109,7 @@ async def verify_otp(
         return {
             "message": "User created successfully.",
             "email": email,
-            "token": user_token,
+            "token": access_token,
         }
         
     except Exception as e:
@@ -144,7 +143,7 @@ async def signIn(response: Response,data: VerifyUser):
     if is_verified:
         token = create_token(existing_user, EXPIRES_IN)
         response.set_cookie(
-        key="user_token",
+        key="access_token",
         value=token,
         max_age=600,
         httponly=True,
@@ -225,7 +224,7 @@ async def reset_password(
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("user_token")
+    response.delete_cookie("access_token")
     return {
         "message": "User logged out successfully"
     }
