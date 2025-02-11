@@ -2,8 +2,9 @@
 from fastapi import APIRouter, Cookie, HTTPException,responses,Response, Header, status
 from uuid import uuid4
 from datetime import datetime, timezone
-
+from jose import jwe
 from pydantic import EmailStr
+from rsa import decrypt
 from app.core.config import EXPIRES_IN
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
@@ -14,11 +15,11 @@ from app.services.auth import hashPass, create_token,verify
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
 from app.utils.utils import check_user_present
-from app.utils.otp_utils import generate_otp_jwt, verify_token
-
+from app.utils.otp_utils import generate_otp_jwt, verify_token,encrypt_jwt,decrypt_jwt
+from app.core.config import JWT_SECRET
 router = APIRouter()
 
-
+JWE_ENC_KEY = JWT_SECRET[:32]
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
 
@@ -37,10 +38,11 @@ async def sign_up(response: Response,data: SignUpType):
         otp:str = str(uuid4().int)[:6]
         send_otp_email(data.email, otp)
         otp_token:str = generate_otp_jwt(data.email, otp)
-        
+        encrypted_token = encrypt_jwt(otp_token)
+        print("encrypted t0oken : " ,encrypted_token)
         response.set_cookie(
             key="signup_token",
-            value=otp_token,
+            value=encrypted_token,
             max_age=600,
             httponly=True,
             secure=False,
@@ -54,8 +56,6 @@ async def sign_up(response: Response,data: SignUpType):
             "status_code":status.HTTP_200_OK
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
@@ -75,11 +75,13 @@ async def verify_otp(
         )
     
     try:
-        print(signup_token)
+        print("encyrpted otp ",signup_token)
+        decrypt_otp = decrypt_jwt(signup_token)
         otpData = verify_otp_type(
-            token = signup_token,
+            token = decrypt_otp,
             otp = data.otp
         )
+        print("decrypted otp ",decrypt_otp)
         email: EmailStr = verify_token(otpData)
         hash_password = hashPass(data.password)
         

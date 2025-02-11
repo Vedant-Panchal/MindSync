@@ -1,10 +1,17 @@
 from datetime import datetime, timedelta, timezone
 from email.policy import HTTP
+import json
+import os
 from fastapi import HTTPException,status
-from jose import jwt
+from jose import jwt,jwe
 from jose.exceptions import JWTError,ExpiredSignatureError
-from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS
+from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS,JWE_ALGORITHM,JWE_SECRET
 from app.db.schemas.user import verify_otp_response, verify_otp_type
+import binascii
+from secrets import token_hex
+
+
+JWE_SECRET_BYTE  = "mDZY-PRzpXzsUgSQ51u3GwnyQXLtph_-GSEZZ1TjUtA"
 
 def generate_otp_jwt(email: str, otp: str) -> str:
     
@@ -22,7 +29,7 @@ def decode_otp_jwt(token: str) -> dict:
     except ExpiredSignatureError:
         raise ValueError("OTP has expired")
     except JWTError:
-        raise ValueError("Invalid OTP token")
+        raise ValueError("Invalid OTP")
     
 def verify_token(data : verify_otp_type):
     try: 
@@ -42,3 +49,20 @@ def verify_token(data : verify_otp_type):
     except Exception as e:
         raise e
         # raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="An Error has Ocurred")
+
+def encrypt_jwt(token : str):
+   try:
+        
+        encrypted_otp = jwe.encrypt(json.dumps(token).encode(), JWE_SECRET_BYTE, algorithm=JWE_ALGORITHM)
+        return encrypted_otp.decode()
+   except Exception as e:
+       raise e
+    #    raise HTTPException(status.HTTP_400_BAD_REQUEST,detail = "Error While Enctrypting Token")
+def decrypt_jwt(token : str):
+    try:
+        decrypted_jwt = jwe.decrypt(token.encode(), JWE_SECRET_BYTE).decode()
+        return decrypted_jwt
+    except Exception as e:
+       raise e
+    #    raise HTTPException(status.HTTP_400_BAD_REQUEST,detail = "Error While Enctrypting Token")
+
