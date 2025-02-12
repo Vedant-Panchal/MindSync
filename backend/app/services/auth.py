@@ -3,10 +3,8 @@ from passlib.context import CryptContext
 from app.core.config import JWT_SECRET, JWT_ALGO
 from jose import jwt,JWTError
 from datetime import datetime,timedelta,timezone
-from typing import List
-
 from app.db.schemas.user import UserInDB
-from fastapi import HTTPException,Depends,status
+from fastapi import HTTPException,Depends
 
 
 passlibContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -47,7 +45,7 @@ def create_token(data: UserInDB,expire : int):
         "email" : data.email,
         "id": data.id
     }
-    expireIn = datetime.now(timezone.utc) + timedelta(minutes = expire)
+    expireIn = datetime.now(timezone.utc) + timedelta(minutes=expire)
     toEncode.update({"exp": expireIn})
     encodeJwt = jwt.encode(toEncode,JWT_SECRET,JWT_ALGO)
     print(encodeJwt)

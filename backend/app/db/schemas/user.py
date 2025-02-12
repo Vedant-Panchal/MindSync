@@ -57,6 +57,7 @@ class VerifyUser(BaseModel):
         description="Password must contain at least 1 uppercase letter, 1 lowercase letter, 1 number, and be at least 8 characters long."
     )
 class ResetPasswordRequest(BaseModel):
+    email: EmailStr
     entered_otp: str
     new_password: str
 
