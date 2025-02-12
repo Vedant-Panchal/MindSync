@@ -5,6 +5,10 @@ from typing import Annotated, Optional
 from datetime import datetime
 
 class create_user(BaseModel):
+    email: EmailStr = Field(
+        ...,  # Required field
+        description="Enter Your Email"
+    )
     password: str = Field(
         ...,  # Required field
         min_length=8,
@@ -68,4 +72,4 @@ class verify_otp_response(BaseModel):
     token: str
 
 class SignUpType(BaseModel):
-    email : str
+    email : EmailStr

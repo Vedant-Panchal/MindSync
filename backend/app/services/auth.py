@@ -16,7 +16,7 @@ def hashPass(password: str):
     return passlibContext.hash(password)
 
 
-def verify(password: str, hashed: str):
+def verify_pass(password: str, hashed: str):
     return passlibContext.verify(secret=password,hash=hashed)
 
 

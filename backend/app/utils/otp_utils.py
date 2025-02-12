@@ -5,7 +5,8 @@ from jose import jwt
 from jose.exceptions import JWTError,ExpiredSignatureError
 from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS,ENCRYPTION_KEY
 from app.db.schemas.user import verify_otp_type
-
+from app.core.connection import redis_client
+import logging
 fernet = Fernet(ENCRYPTION_KEY)
 
 def generate_otp_jwt(email: str, otp: str) -> str:
@@ -25,6 +26,23 @@ def decode_otp_jwt(token: str) -> dict:
         raise ValueError("OTP has expired")
     except JWTError:
         raise ValueError("Invalid OTP")
+    
+def store_otp(email: str, otp: str):
+    try:
+        redis_client.set(name=email, value=otp, ex=OTP_EXPIRY_MINS * 60)
+        logging.info(f"✅ OTP stored successfully in Redis for {email}")
+    except Exception as e:
+        logging.error(f"❌ Error storing OTP in Redis for {email}: {str(e)}")
+
+def verify_otp(email: str, entered_otp: str):
+    stored_otp = redis_client.get(name=email)
+    if stored_otp is None:
+        raise ValueError("OTP expired or not found")
+    if stored_otp != entered_otp:
+        raise ValueError("Incorrect OTP")
+    redis_client.delete(email) 
+    return True
+
     
 def verify_token(data : verify_otp_type):
     try: 

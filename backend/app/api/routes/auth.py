@@ -11,11 +11,12 @@ from app.core.connection import db
 import re
 from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest
 from app.db.schemas.user import SignUpType,verify_otp_type
-from app.services.auth import hashPass, create_token,verify
+from app.services.auth import hashPass, create_token,verify_pass
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
+from app.utils.otp_utils import verify_otp
 from app.utils.utils import check_user_present
-from app.utils.otp_utils import generate_otp_jwt, verify_token,encrypt_jwt,decrypt_jwt
+from app.utils.otp_utils import generate_otp_jwt, store_otp, verify_token,encrypt_jwt,decrypt_jwt
 from app.core.config import JWT_SECRET
 router = APIRouter()
 
@@ -35,21 +36,21 @@ async def sign_up(response: Response,data: SignUpType):
             )
         
         otp:str = str(uuid4().int)[:6]
-        otp_token:str = generate_otp_jwt(data.email, otp)
-        encrypted_token = encrypt_jwt(otp_token)
-        print("encrypted token : " ,encrypted_token)
+        # otp_token:str = generate_otp_jwt(data.email, otp)
+        # encrypted_token = encrypt_jwt(otp_token)
+        # print("encrypted token : " ,encrypted_token)
         send_otp_email(data.email, otp)
-        response.set_cookie(
-            key="signup_token",
-            value=encrypted_token,
-            max_age=600,
-            httponly=True,
-            secure=False,
-            samesite="Lax"
-        )
-        print(response.headers)
+        # response.set_cookie(
+        #     key="signup_token",
+        #     value=encrypted_token,
+        #     max_age=600,
+        #     httponly=True,
+        #     secure=False,
+        #     samesite="Lax"
+        # )
+        # print(response.headers)
 
-        
+        store_otp(data.email,otp)        
         return {
             "message": "OTP Sent Successfully",
             "status_code":status.HTTP_200_OK
@@ -62,26 +63,30 @@ async def sign_up(response: Response,data: SignUpType):
         )
 
 @router.post("/verify-otp")
-async def verify_otp(
+async def verify(
     response: Response,
     data: create_user,
-    signup_token: str | None = Cookie(None)
+    # signup_token: str | None = Cookie(None)
 ):
-    if not signup_token:
-        return HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="OTP token missing in cookies"
-        )
-    
+    # if not signup_token:
+    #     return HTTPException(
+    #         status_code=status.HTTP_401_UNAUTHORIZED, 
+    #         detail="OTP token missing in cookies"
+    #     )
+    email = data.email
+    password = data.password
+    if not re.fullmatch(PASSWORD_REGEX, password):
+            raise HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
     try:
-        print("encyrpted otp ",signup_token)
-        decrypt_otp = decrypt_jwt(signup_token)
-        otpData = verify_otp_type(
-            token = decrypt_otp,
-            otp = data.otp
-        )
-        print("decrypted otp ",decrypt_otp)
-        email: EmailStr = verify_token(otpData)
+        # print("encyrpted otp ",signup_token)
+        # decrypt_otp = decrypt_jwt(signup_token)
+        # otpData = verify_otp_type(
+        #     token = decrypt_otp,
+        #     otp = data.otp
+        # )
+        # print("decrypted otp ",decrypt_otp)
+        if not verify_otp(email,data.otp):  
+            raise HTTPException(status_code=400, detail="Incorrect or expired OTP")
         hash_password = hashPass(data.password)
         
         user = UserInDB(
@@ -121,6 +126,9 @@ async def verify_otp(
 @router.post("/sign-in")
 async def signIn(response: Response,data: VerifyUser):
     user = check_user_present(data.email)
+    password:str = data.password
+    if not re.fullmatch(PASSWORD_REGEX, password):
+            raise HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
     if not user:
         raise HTTPException(status_code=400, detail="No email exists with this user")
 
@@ -129,7 +137,7 @@ async def signIn(response: Response,data: VerifyUser):
     if not existing_user.is_verified:
         raise HTTPException(status_code=401, detail="User is not verified. Please complete OTP verification")
     
-    is_verified = verify(data.password,existing_user.password)
+    is_verified = verify_pass(data.password,existing_user.password)
     
     if is_verified:
         token = create_token(existing_user, EXPIRES_IN)
