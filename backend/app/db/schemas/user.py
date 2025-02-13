@@ -62,9 +62,9 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
-class verify_otp_type(BaseModel):
-    token : str
-    otp : str
+class CreateOtpType(BaseModel):
+    email : str
+    id : str
 
 
 class verify_otp_response(BaseModel):

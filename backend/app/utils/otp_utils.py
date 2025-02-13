@@ -1,5 +1,4 @@
 from app.core.config import OTP_EXPIRY_MINS
-from app.db.schemas.user import verify_otp_type
 from app.core.connection import redis_client
 import logging
 

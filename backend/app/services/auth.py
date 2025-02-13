@@ -3,8 +3,8 @@ from passlib.context import CryptContext
 from app.core.config import JWT_SECRET, JWT_ALGO
 from jose import jwt,JWTError
 from datetime import datetime,timedelta,timezone
-from app.db.schemas.user import UserInDB
-from fastapi import HTTPException,Depends
+from app.db.schemas.user import CreateOtpType
+from fastapi import Cookie, HTTPException,Depends,status
 
 
 passlibContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -23,25 +23,10 @@ def get_token(data: dict,JWT_SECRET: str,JWT_ALGO: str):
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def auth_middleware (token : str = Depends(oauth2_scheme)):
-    exception  = HTTPException(
-       status_code= 401 ,
-       detail="Could not validate credentials",
-       headers={"WWW-Authenticate":"Bearer"}
-    )
-    try:
-       payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
-       username: str = payload.get("sub")
-       if username is None:
-           raise exception
-    except JWTError:
-        raise exception
-    return username
 
 
-
-def create_token(data: UserInDB,expire : int):
-    toEncode = {
+def create_token(data: CreateOtpType,expire : int):
+    toEncode:dict[str,any] = {
         "email" : data.email,
         "id": data.id
     }
@@ -51,3 +36,26 @@ def create_token(data: UserInDB,expire : int):
     print(encodeJwt)
     return encodeJwt
     
+def decode_token(token : str) :
+    try:
+        decoded_token =  jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+        exp = decoded_token["exp"]
+        return decoded_token
+        # if datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
+        #     raise HTTPException(status_code=401, detail="Access token expired")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token expired")
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+# def decode_token(token: str):
+#     try:
+#         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
+        
+#         exp = decoded_token.get("exp")  # Get expiration time
+#         if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
+#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Access token expired")
+
+#         return decoded_token  # ✅ Successfully decoded token
+
+#     except JWTError:
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

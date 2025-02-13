@@ -1,22 +1,23 @@
 
 import logging
-from fastapi import APIRouter, Cookie, HTTPException,Response,status
+from idna import decode
+from jose import jwt,JWTError
+from fastapi import APIRouter, Cookie, Depends, HTTPException,Response,status
 from uuid import uuid4
 from datetime import datetime, timezone
 from pydantic import EmailStr
-from app.core.config import EXPIRES_IN
+from app.core.config import ACCESS_TOKEN_EXPIRES_MINS,REFRESH_TOKEN_EXPIRES_DAYS,ACCESS_TOKEN_EXPIRES_MINS
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
-from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest
+from app.db.schemas.user import UserInDB, create_user,VerifyUser,ResetPasswordRequest,CreateOtpType
 from app.db.schemas.user import SignUpType
-from app.services.auth import hashPass, create_token,verify_pass
+from app.services.auth import hashPass, create_token,verify_pass,decode_token
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
 from app.utils.otp_utils import verify_otp
 from app.utils.utils import check_user_present
 from app.utils.otp_utils import store_otp
-
 router = APIRouter()
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
@@ -59,8 +60,9 @@ async def verify(
     try:
         verify_otp(email,data.otp)
         hash_password = hashPass(data.password)
+        id = str(uuid4())
         user = UserInDB(
-            id=str(uuid4()),
+            id=id,
             email=email,
             username=data.username,
             password=hash_password,
@@ -68,17 +70,30 @@ async def verify(
             updated_at=datetime.now(timezone.utc),
             is_verified=True,
         )
-
-        access_token = create_token(user, EXPIRES_IN)
+        userData = CreateOtpType(
+            email=email,
+            id = id
+        )
+        access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
+        refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60)
         db.table("users").insert(jsonable_encoder(user)).execute()
         
         response.set_cookie(
             key="access_token",
             value=access_token,
-            max_age=EXPIRES_IN*60, # in seconds
+            max_age=ACCESS_TOKEN_EXPIRES_MINS, # in seconds
             httponly=True,
             secure=True,
             samesite="Lax"
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            max_age=REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60,  # Convert days to seconds
+            httponly=True,
+            secure=True,
+            samesite="Strict"
         )
         return {
             "message": "User created successfully.",
@@ -92,10 +107,11 @@ async def verify(
         )
     except Exception as e:
         logging.error(f"Unexpected error during OTP verification: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred. Please try again."
-        )
+        # raise HTTPException(
+        #     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     detail="An unexpected error occurred. Please try again."
+        # )
+        raise e
 
 @router.post("/sign-in")
 async def signIn(response: Response,data: VerifyUser):
@@ -114,11 +130,11 @@ async def signIn(response: Response,data: VerifyUser):
     is_verified = verify_pass(data.password,existing_user.password)
     
     if is_verified:
-        token = create_token(existing_user, EXPIRES_IN)
+        token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS)
         response.set_cookie(
         key="access_token",
         value=token,
-        max_age=EXPIRES_IN*60, # in seconds
+        max_age=ACCESS_TOKEN_EXPIRES_MINS*60, # in seconds
         httponly=True,
         secure=False,
         samesite="Lax"
@@ -180,3 +196,42 @@ async def logout(response: Response):
     return {
         "message": "User logged out successfully"
     }
+
+
+@router.post("/refresh-token")
+async def refresh_token(response: Response, refresh_token : str = Cookie(None)):
+    """Refresh access token using a valid refresh token."""
+    if not refresh_token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Login In Or Create Account")
+
+    try:
+        decoded_token = decode_token(refresh_token)
+        existing_user = CreateOtpType(
+            email = decoded_token["email"],
+            id = decoded_token["id"]                         )
+        # user_exists = check_user_present(email)
+        # if not user_exists:
+        #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="User Not Exists With This Email")
+        # else:
+        # existing_user = UserInDB(**user_exists[0])
+        # Generate a new access token
+        new_access_token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS)
+
+        # Set new access token cookie
+        response.set_cookie(
+            key="access_token",
+            value=new_access_token,
+            max_age=ACCESS_TOKEN_EXPIRES_MINS,
+            httponly=True,
+            secure=True,
+            samesite="Lax"
+        )
+
+        return {
+            "message" : "Access Token Refreshed"
+        }
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
