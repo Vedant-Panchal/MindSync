@@ -90,7 +90,7 @@ async def verify(
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            max_age=REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60,  # Convert days to seconds
+            max_age=REFRESH_TOKEN_EXPIRES_DAYS,  # Convert days to seconds
             httponly=True,
             secure=True,
             samesite="Strict"
@@ -103,7 +103,7 @@ async def verify(
     except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
+            detail="An Error Has Occurred"
         )
     except Exception as e:
         logging.error(f"Unexpected error during OTP verification: {str(e)}")
