@@ -3,7 +3,7 @@ import Landing from "./routes/landing";
 import SignIn from "@/app/routes/auth/login";
 import SignUp from "@/app/routes/auth/signup";
 
-export function Router() {
+export function AppRouter() {
   return (
       <Routes>
         <Route path="/" element={<Landing />} />
