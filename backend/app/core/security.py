@@ -65,53 +65,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     raise HTTPException(status_code=401, detail="Unauthorized: Invalid token")
 
         except HTTPException as e:
-            return Response(content=f'{{"detail": "{e.detail}"}}', status_code=e.status_code, media_type="application/json")  
+            return Response(content=f'{{"detail": "{e.detail}"}}', status_code=e.status_code)  
 
         except Exception as e:
-            print(f"🔥 Internal Server Error: {str(e)}")  # Debugging
-            return Response(content=f'{{"detail": "Internal Server Error: {str(e)}"}}', status_code=500, media_type="application/json")
-
-
-
-
-
-# using dependencies
-
-async def auth_middleware(request: Request):
-    """
-    Middleware to authenticate users via JWT stored in cookies.
-    """
-
-
-    access_token: str | None = request.cookies.get("access_token")
-    refresh_token: str | None = request.cookies.get("refresh_token")
-
-    if not access_token:
-        print("No Access Token")
-        if not refresh_token:
-            raise HTTPException(status_code=401, detail="Login Required")
-        else:
-            decoded_token = decode_token(refresh_token)
-            existing_user = CreateOtpType(**decoded_token)
-
-            # Generate a new access token
-            # new_access_token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS)
-            payload = decode_token(refresh_token)
-            # return{
-            #     "user" : payload,
-            #     "token" : new_access_token
-            # }
-            return payload
-    else:
-        try:
-            payload = decode_token(access_token)
-            return payload
-            # return {
-            #     "user" : "payload",
-            #     "token" : "access_token"
-            # }
-        except JWTError:
-            raise HTTPException(status_code=401, detail="Unauthorized: Invalid token")
-        
-        except Exception as e:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Error While Authenticating")
+            print(f"Internal Server Error: {str(e)}")  # Debugging
+            return Response(content=f'{{"detail": "Internal Server Error: {str(e)}"}}', status_code=500)
