@@ -33,29 +33,13 @@ def create_token(data: CreateOtpType,expire : int):
     expireIn = datetime.now(timezone.utc) + timedelta(minutes=expire)
     toEncode.update({"exp": expireIn})
     encodeJwt = jwt.encode(toEncode,JWT_SECRET,JWT_ALGO)
-    print(encodeJwt)
     return encodeJwt
     
 def decode_token(token : str) :
     try:
         decoded_token =  jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
-        exp = decoded_token["exp"]
         return decoded_token
-        # if datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
-        #     raise HTTPException(status_code=401, detail="Access token expired")
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-# def decode_token(token: str):
-#     try:
-#         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
-        
-#         exp = decoded_token.get("exp")  # Get expiration time
-#         if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
-#             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Access token expired")
-
-#         return decoded_token  # ✅ Successfully decoded token
-
-#     except JWTError:
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

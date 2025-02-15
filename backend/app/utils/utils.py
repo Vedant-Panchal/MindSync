@@ -3,7 +3,7 @@ from pydantic import EmailStr
 from app.core.connection import db
 
 
-def check_user_present(email : EmailStr):
+def get_user_by_email(email : EmailStr):
     try:
         response = db.table("users").select("*").eq("email",email).execute()
         return response.data

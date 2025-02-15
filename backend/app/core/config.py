@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 from loguru import logger
 import sys
+
+from app.models.auth import OAuthType
 logger.remove()
 logger.add(sys.stdout)
 load_dotenv()

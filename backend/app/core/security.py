@@ -32,7 +32,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
             refresh_token = request.cookies.get("refresh_token")
 
             if not access_token:
-                print("No Access Token Found")
                 if not refresh_token:
                     raise HTTPException(status_code=401, detail="Login Required")
 
@@ -44,7 +43,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
                     # Store user in request state
                     request.state.user = decode_token(new_access_token)
-                    print(f"New Access Token Created: {new_access_token}")
 
                     response = await call_next(request)
                     response.set_cookie(
@@ -57,7 +55,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     )
                     return response
                 except Exception as e:
-                    print(f" Refresh Token Error: {str(e)}")
                     raise HTTPException(status_code=401, detail="Invalid refresh token")
 
             else:

@@ -3,7 +3,8 @@ from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
 from uuid import uuid4
 from datetime import datetime, timezone
 from pydantic import EmailStr
-from app.core.config import ACCESS_TOKEN_EXPIRES_MINS, GOOGLE_URI, REFRESH_TOKEN_EXPIRES_DAYS, ACCESS_TOKEN_EXPIRES_MINS
+import requests
+from app.core.config import ACCESS_TOKEN_EXPIRES_MINS, GOOGLE_CLIENT_ID, GOOGLE_URI, REFRESH_TOKEN_EXPIRES_DAYS, ACCESS_TOKEN_EXPIRES_MINS
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
 import re
@@ -13,11 +14,12 @@ from app.services.auth import hashPass, create_token, verify_pass, decode_token
 from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
 from app.utils.otp_utils import verify_otp
-from app.utils.utils import check_user_present
+from app.utils.utils import get_user_by_email
 from app.utils.otp_utils import store_otp
 from loguru import logger
 from starlette.responses import RedirectResponse
-from app.services.google_oauth import oauth, get_google_user
+from app.services.google_oauth import GOOGLE_JWKS_URL, oauth
+from app.models.auth import OAuthType
 
 router = APIRouter()
 
@@ -28,7 +30,7 @@ async def sign_up(response: Response, data: SignUpType):
     try:
         logger.info("Attempting to sign up user with email: {}", data.email)
         # existing_user: SupabaseResponse = db.table("users").select("*").eq("email", data.email).execute()
-        existing_user = check_user_present(data.email)
+        existing_user = get_user_by_email(data.email)
         
         if existing_user:
             logger.warning("User already exists with email: {}", data.email)
@@ -113,7 +115,7 @@ async def verify(response: Response, data: create_user):
 
 @router.post("/sign-in")
 async def signIn(response: Response, data: VerifyUser):
-    user = check_user_present(data.email)
+    user = get_user_by_email(data.email)
     password: str = data.password
     if not re.fullmatch(PASSWORD_REGEX, password):
         logger.warning("Password does not meet criteria for email: {}", data.email)
@@ -159,7 +161,7 @@ async def signIn(response: Response, data: VerifyUser):
 
 @router.post("/reset-password", response_model=None)
 async def reset_password(email: EmailStr):
-    user_data = check_user_present(email)
+    user_data = get_user_by_email(email)
     if not user_data:
         logger.warning("No user exists with this email: {}", email)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No User Exists With This Email")
@@ -177,7 +179,7 @@ async def reset_password(data: ResetPasswordRequest):
     entered_otp: str = data.entered_otp
     newPassword: str = data.new_password
     email: str = data.email
-    userData = check_user_present(email)
+    userData = get_user_by_email(email)
     if not userData:
         logger.warning("No user exists with this email: {}", email)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No User Exists With This Email")
@@ -250,101 +252,48 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
     except JWTError:
         logger.warning("Invalid refresh token")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
-    
-# @router.get("/google/login")
-# async def google_login(request: Request):
-#     """Redirect user to Google's OAuth login page"""
-#     try:
-#         logger.info("Redirecting user to Google's OAuth login page")
-#         return await oauth.google.authorize_redirect(request, GOOGLE_URI)
-#     except Exception as e:
-#         logger.error("Error during Google login redirect: {}", str(e))
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error during Google login redirect")
 
-# @router.get("/google/callback")
-# async def google_callback(request: Request):
-#     """Handle Google OAuth callback and authenticate user"""
-#     try:
-#         google_user = await get_google_user(request)
-#         email = google_user.get("email")
-#         name = google_user.get("name")
-
-#         existing_user = db.table("users").select("*").eq("email", email).execute()
-
-#         if not existing_user.data:
-#             user_id = str(uuid4())
-#             new_user = UserInDB(
-#                 id=user_id,
-#                 email=email,
-#                 username=name,
-#                 password=None,
-#                 created_at=datetime.now(timezone.utc),
-#                 updated_at=datetime.now(timezone.utc),
-#                 is_verified=True,
-#             )
-#             userData = CreateOtpType(
-#                 email=email,
-#                 id=user_id
-#             )
-#             access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-#             refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 2)
-#             db.table("users").insert(jsonable_encoder(new_user)).execute()
-#             logger.success("New user created successfully with email: {}", email)
-#         else:
-#             userData = CreateOtpType(
-#                 email=email,
-#                 id=existing_user.data[0]["id"]
-#             )
-#             access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-#             refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 2)
-#             logger.info("Existing user authenticated successfully with email: {}", email)
-
-#         response = RedirectResponse(url="http://localhost:3000/dashboard")  # Change to your frontend URL
-#         response.set_cookie("access_token", access_token, httponly=True, secure=True, samesite="Lax")
-#         response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True, samesite="Strict")
-
-#         return response
-#     except Exception as e:
-#         logger.error("Error during Google OAuth callback: {}", str(e))
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error during Google OAuth callback")
 @router.get("/google/login")
 async def google_login(request: Request):
     return await oauth.google.authorize_redirect(request, GOOGLE_URI)
 
 @router.get("/google/callback")
 async def google_callback(request: Request):
+    token:dict = await oauth.google.authorize_access_token(request)
+    id_token = token.get("id_token")
+    access_token = token.get("access_token")
     try:
-        google_user = await get_google_user(request)
-        email = google_user.get("email")
-        name = google_user.get("name")
+        user_info = jwt.decode(
+        id_token,
+        requests.get(GOOGLE_JWKS_URL).json(),
+        algorithms=["RS256"],
+        audience=GOOGLE_CLIENT_ID,
+        access_token=access_token
+        )
+        print(user_info)
+        if not id_token or not access_token:
+            raise HTTPException(status_code=400, detail="Missing tokens")
 
-        existing_user = db.table("users").select("*").eq("email", email).execute()
-
-        if not existing_user.data:
-            user_id = str(uuid4())
-            new_user = UserInDB(
-                id=user_id,
-                email=email,
-                username=name,
-                password=None,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc),
-                is_verified=True,
-            )
-            userData = CreateOtpType(email=email, id=user_id)
-            access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-            refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 2)
-            db.table("users").insert(jsonable_encoder(new_user)).execute()
-        else:
-            userData = CreateOtpType(email=email, id=existing_user.data[0]["id"])
-            access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-            refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 2)
-
-        response = RedirectResponse(url="http://localhost:3000/dashboard")
-        response.set_cookie("access_token", access_token, httponly=True, secure=True, samesite="Lax")
-        response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True, samesite="Strict")
-
-        return response
+        if user_info:
+            user = get_user_by_email(email=user_info.get("email"))
+            if not user:
+                user = UserInDB(
+                    id=str(uuid4()),
+                    email=user_info.get("email"),
+                    username=str(user_info.get("name")),
+                    oauth_provider=OAuthType.google.value,
+                    oauth_id=user_info.get("sub"),
+                    password=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                    is_verified=True
+                )
+                db.table("users").insert(jsonable_encoder(user)).execute()
+                
+        return {
+            "message": "User signed in successfully using Google",
+            "details":token
+        }
     except Exception as e:
-        logger.error("Error during Google OAuth callback: %s", str(e))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error during Google OAuth callback")
+        logger.error("Error during Google OAuth callback: {s}",s=str(e))
+        return str(e)
