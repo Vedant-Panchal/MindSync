@@ -19,6 +19,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/docs",
             "/redoc",
             "/openapi.json",
+            "/auth/v1/google/login",
+            "/auth/v1/google/callback"
         }  # Public routes
 
     async def dispatch(self, request: Request, call_next):

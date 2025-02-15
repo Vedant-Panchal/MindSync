@@ -16,6 +16,9 @@ OTP_EXPIRY_MINS:int = int(os.getenv("OTP_EXPIRY_MINS"),0)
 ENCRYPTION_KEY:str = os.getenv("ENCRYPTION_KEY").encode()
 REDIS_URL:str = os.getenv("UPSTASH_REDIS_URL")
 REDIS_PASSWORD:str = os.getenv("UPSTASH_REDIS_PASSWORD")
+GOOGLE_CLIENT_ID : str = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_SECRET_KEY : str = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_URI : str = os.getenv("GOOGLE_REDIRECT_URI")
 
 
 # Log configuration values
@@ -28,7 +31,6 @@ logger.success("Resend API Key: {key} 📧", key=RESEND_KEY)
 logger.success("OTP Expiry (mins): {mins} ⏳", mins=OTP_EXPIRY_MINS)
 logger.success("Redis URL: {url} 🌐", url=REDIS_URL)
 logger.success("Redis Password: {password} 🔑", password=REDIS_PASSWORD)
-
-GOOGLE_CLIENT_ID : str = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_SECRET_KEY : str = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_URI : str = os.getenv("GOOGLE_REDIRECT_URI")
+logger.success("Google Client Id: {client_id} 🔑", client_id=GOOGLE_CLIENT_ID)
+logger.success("Google Secret Key : {secret_key} 🔑", secret_key=GOOGLE_SECRET_KEY)
+logger.success("Google Redirect Uri : {google_uri} 🔑", google_uri=GOOGLE_URI)
