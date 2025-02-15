@@ -28,3 +28,7 @@ logger.success("Resend API Key: {key} 📧", key=RESEND_KEY)
 logger.success("OTP Expiry (mins): {mins} ⏳", mins=OTP_EXPIRY_MINS)
 logger.success("Redis URL: {url} 🌐", url=REDIS_URL)
 logger.success("Redis Password: {password} 🔑", password=REDIS_PASSWORD)
+
+GOOGLE_CLIENT_ID : str = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_SECRET_KEY : str = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_URI : str = os.getenv("GOOGLE_REDIRECT_URI")
