@@ -44,7 +44,7 @@ def decode_token(token : str) :
         # if datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
         #     raise HTTPException(status_code=401, detail="Access token expired")
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="token expired")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     except JWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 # def decode_token(token: str):

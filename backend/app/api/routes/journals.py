@@ -8,7 +8,7 @@ router = APIRouter()
 async def get_random_products(request: Request):
     user = getattr(request.state, "user", None)
 
-    if not user or user.get("email") != "mohammedrupawala11@gmail.com":  
+    if not user or user.get("email") != "dvijoza@gmail.com":  
         raise HTTPException(status_code=403, detail="Forbidden: You are not allowed to access this resource")
     
     url = "https://api.freeapi.app/api/v1/public/randomproducts"

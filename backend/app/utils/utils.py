@@ -1,8 +1,9 @@
 from fastapi import HTTPException,status
+from pydantic import EmailStr
 from app.core.connection import db
 
 
-def check_user_present(email : str):
+def check_user_present(email : EmailStr):
     try:
         response = db.table("users").select("*").eq("email",email).execute()
         return response.data

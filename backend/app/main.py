@@ -3,9 +3,12 @@ from datetime import datetime
 from app.api.routes import auth
 from app.api.routes import journals
 from app.core.security import AuthMiddleware
-
+from loguru import logger
+import sys
+logger.remove()
+logger.add(sys.stdout)
 app = FastAPI()
-# app.middleware("http")(auth_middleware)
+
 app.add_middleware(middleware_class=AuthMiddleware)
 
 app.include_router(auth.router, prefix="/auth/v1", tags=["Authentication"])

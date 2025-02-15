@@ -17,7 +17,8 @@ dependencies = [
     "pydantic[email] (>=2.10.6,<3.0.0)",
     "requests (>=2.32.3,<3.0.0)",
     "cryptography (>=44.0.0,<45.0.0)",
-    "redis (>=5.2.1,<6.0.0)"
+    "redis (>=5.2.1,<6.0.0)",
+    "loguru (>=0.7.3,<0.8.0)"
 ]
 
 

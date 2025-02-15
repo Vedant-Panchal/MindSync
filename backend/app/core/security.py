@@ -13,6 +13,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/auth/v1/sign-in",
             "/auth/v1/sign-up",
             "/auth/v1/reset-password",
+            "/auth/v1/reset-password/verify",
             "/auth/v1/verify-otp",
             "/heartbeat",
             "/docs",
