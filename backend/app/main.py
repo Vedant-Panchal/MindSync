@@ -7,13 +7,15 @@ from starlette.middleware.sessions import SessionMiddleware
 from loguru import logger
 import sys
 from app.core.config import JWT_SECRET
+from app.core.exceptions import APIException, api_exception_handler, generic_exception_handler
 logger.remove()
 logger.add(sys.stdout)
 app = FastAPI()
 
 app.add_middleware(middleware_class=AuthMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
-
+app.add_exception_handler(APIException,api_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 app.include_router(auth.router, prefix="/auth/v1", tags=["Authentication"])
 app.include_router(journals.router)
 

@@ -1,5 +1,6 @@
+from email import message
 from jose import jwt, JWTError
-from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
+from fastapi import APIRouter, Cookie, Request, Response, status
 from uuid import uuid4
 from datetime import datetime, timezone
 from pydantic import EmailStr
@@ -20,23 +21,25 @@ from loguru import logger
 from starlette.responses import RedirectResponse
 from app.services.google_oauth import GOOGLE_JWKS_URL, oauth
 from app.models.auth import OAuthType
+from app.core.exceptions import APIException
 
 router = APIRouter()
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
 @router.post("/sign-up")
-async def sign_up(response: Response, data: SignUpType):
+async def sign_up(data: SignUpType):
     try:
         logger.info("Attempting to sign up user with email: {}", data.email)
-        # existing_user: SupabaseResponse = db.table("users").select("*").eq("email", data.email).execute()
         existing_user = get_user_by_email(data.email)
         
         if existing_user:
             logger.warning("User already exists with email: {}", data.email)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
-                detail="User already exists"
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="User already exists",
+                detail="User already exists with this email",
+                hint="Please sign in or reset your password"
             )
         otp: str = str(uuid4().int)[:6]
         send_otp_email(data.email, otp)
@@ -46,8 +49,7 @@ async def sign_up(response: Response, data: SignUpType):
             "message": "OTP Sent Successfully",
         }
         
-    except Exception as e:
-        logger.error("Database query failed: {}", str(e))
+    except APIException as e:
         raise e
 
 @router.post("/verify-otp")
@@ -57,7 +59,12 @@ async def verify(response: Response, data: create_user):
     logger.info("Attempting to verify user with email: {}", data.email)
     if not re.fullmatch(PASSWORD_REGEX, password):
         logger.warning("Password does not meet criteria for email: {}", email)
-        raise HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Password does not meet criteria",
+            detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.",
+            hint="Please try again"
+        )
     try:
         verify_otp(email, data.otp)
         hash_password = hashPass(data.password)
@@ -67,6 +74,8 @@ async def verify(response: Response, data: create_user):
             email=email,
             username=data.username,
             password=hash_password,
+            oauth_id=None,
+            oauth_provider=OAuthType.local.value,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
             is_verified=True,
@@ -102,14 +111,16 @@ async def verify(response: Response, data: create_user):
         }
     except ValueError as ve:
         logger.error("Value error during OTP verification: {}", str(ve))
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_400_BAD_REQUEST,
+            message="Error during OTP verification",
             detail=str(ve)
         )
     except Exception as e:
         logger.critical("Unexpected error during OTP verification: {}", str(e))
-        raise HTTPException(
+        raise APIException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="An unexpected error occurred",
             detail="An unexpected error occurred. Please try again."
         )
 
@@ -119,22 +130,45 @@ async def signIn(response: Response, data: VerifyUser):
     password: str = data.password
     if not re.fullmatch(PASSWORD_REGEX, password):
         logger.warning("Password does not meet criteria for email: {}", data.email)
-        raise HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Password does not meet criteria",
+            detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.",
+            hint="Please try again"
+        )
     if not user:
         logger.warning("No email exists with this user: {}", data.email)
-        raise HTTPException(status_code=400, detail="No email exists with this user")
-
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="No email exists with this user",
+            detail="No user found with this email",
+            hint="Please sign up or check your email"
+        )
+    elif user[0].get("oauth_provider") != OAuthType.local.value:
+        logger.warning("User with email: {} is not registered with email or password", user[0].get('email'))
+        raise APIException(
+            status_code=status.HTTP_409_CONFLICT,
+            message="User is not registered with email/password",
+            detail="User is registered with a different method",
+            hint="Please use the correct login method"
+        )
     existing_user = UserInDB(**user[0])
     
     if not existing_user.is_verified:
         logger.warning("User is not verified for email: {}", data.email)
-        raise HTTPException(status_code=401, detail="User is not verified. Please complete OTP verification")
+        raise APIException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="User is not verified",
+            detail="Please complete OTP verification",
+            hint="Please verify your email"
+        )
     
     is_verified = verify_pass(data.password, existing_user.password)
     
     if is_verified:
-        access_token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS)
-        refresh_token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS * 3)
+        userData = CreateOtpType(email=existing_user.email, id=existing_user.id)
+        access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
+        refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 3)
         response.set_cookie(
             key="access_token",
             value=access_token,
@@ -157,18 +191,31 @@ async def signIn(response: Response, data: VerifyUser):
         }
     else:
         logger.warning("Incorrect password for email: {}", data.email)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password")
+        raise APIException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Incorrect Password",
+            detail="The password you entered is incorrect",
+            hint="Please try again"
+        )
 
 @router.post("/reset-password")
 async def reset_password(email: EmailStr):
     user_data = get_user_by_email(email)
     if not user_data:
         logger.warning("No user exists with this email: {}", email)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No User Exists With This Email")
-    elif user_data[0].get("oauth_provider") is not OAuthType.local.value:
-        logger.warning("User with email: {} is not registered with email/password", email)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is not registered with email/password")
-        
+        raise APIException(
+            status_code=status.HTTP_409_CONFLICT,
+            message="No user exists with this email",
+            hint="Please sign up."
+        )
+    elif user_data[0].get("oauth_provider") != OAuthType.local.value:
+        logger.warning("User with email: {} is not registered with email or password", email)
+        raise APIException(
+            status_code=status.HTTP_409_CONFLICT,
+            message="User is not registered with email/password",
+            detail="User is registered with a different method",
+            hint="Please use the correct login method"
+        )
     else:
         otp = str(uuid4().int)[:6]
         store_otp(email, otp)
@@ -179,22 +226,36 @@ async def reset_password(email: EmailStr):
         }
 
 @router.put("/reset-password/verify")
-async def reset_password(data: ResetPasswordRequest):
+async def reset_password_verify(data: ResetPasswordRequest):
     entered_otp: str = data.entered_otp
     newPassword: str = data.new_password
     email: str = data.email
     userData = get_user_by_email(email)
     if not userData:
         logger.warning("No user exists with this email: {}", email)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No User Exists With This Email")
+        raise APIException(
+            status_code=status.HTTP_409_CONFLICT,
+            message="No user exists with this email",
+            hint="Please sign up"
+        )
     else:
         try:
             if not verify_otp(email, entered_otp):
                 logger.warning("Incorrect or expired OTP for email: {}", email)
-                raise HTTPException(status_code=400, detail="Incorrect or expired OTP")
+                raise APIException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    message="Incorrect or expired OTP",
+                    detail="The OTP you entered is incorrect or has expired",
+                    hint="Please request a new OTP"
+                )
             if not re.fullmatch(PASSWORD_REGEX, newPassword):
                 logger.warning("Password does not meet criteria for email: {}", email)
-                raise HTTPException(status_code=400, detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.")
+                raise APIException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    message="Password does not meet criteria",
+                    detail="Password must contain at least 1 uppercase, 1 lowercase, 1 number, and be at least 8 characters long.",
+                    hint="Please try again"
+                )
 
             hashedPassword = hashPass(newPassword)
             try:
@@ -202,15 +263,19 @@ async def reset_password(data: ResetPasswordRequest):
                 logger.success("Password updated successfully for email: {}", email)
                 return {
                     "message": "Password Updated Successfully",
-                    "status_code": status.HTTP_200_OK
                 }
             except Exception as e:
                 logger.error("Error occurred while updating password for email: {}", email)
-                raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT, detail="Error Occurred While Updating Password")
+                raise APIException(
+                    status_code=status.HTTP_408_REQUEST_TIMEOUT,
+                    message="Error occurred while updating password",
+                    detail="There was an error while updating the password. Please try again."
+                )
         except ValueError as ve:
             logger.error("Value error during OTP verification: {}", str(ve))
-            raise HTTPException(
+            raise APIException(
                 status_code=status.HTTP_400_BAD_REQUEST,
+                message="Error during OTP verification",
                 detail=str(ve)
             )
 
@@ -225,10 +290,14 @@ async def logout(response: Response):
 
 @router.post("/refresh-token")
 async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
-    """Refresh access token using a valid refresh token."""
+    
     if not refresh_token:
         logger.warning("No refresh token provided")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Login In Or Create Account")
+        raise APIException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Login In Or Create Account",
+            detail="No refresh token provided"
+        )
 
     try:
         decoded_token = decode_token(refresh_token)
@@ -252,10 +321,20 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
 
     except jwt.ExpiredSignatureError:
         logger.warning("Refresh token expired")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token expired")
+        raise APIException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Refresh token expired",
+            detail="The refresh token has expired",
+            hint="Please log in again"
+        )
     except JWTError:
         logger.warning("Invalid refresh token")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+        raise APIException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Invalid refresh token",
+            detail="The refresh token is invalid",
+            hint="Please log in again"
+        )
 
 @router.get("/google/login")
 async def google_login(request: Request):
@@ -263,20 +342,23 @@ async def google_login(request: Request):
 
 @router.get("/google/callback")
 async def google_callback(request: Request):
-    token:dict = await oauth.google.authorize_access_token(request)
+    token: dict = await oauth.google.authorize_access_token(request)
     id_token = token.get("id_token")
     access_token = token.get("access_token")
     try:
         if not id_token or not access_token:
-            raise HTTPException(status_code=400, detail="Missing tokens")
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="Missing tokens",
+                detail="ID token or access token is missing"
+            )
         user_info = jwt.decode(
-        id_token,
-        requests.get(GOOGLE_JWKS_URL).json(),
-        algorithms=["RS256"],
-        audience=GOOGLE_CLIENT_ID,
-        access_token=access_token
+            id_token,
+            requests.get(GOOGLE_JWKS_URL).json(),
+            algorithms=["RS256"],
+            audience=GOOGLE_CLIENT_ID,
+            access_token=access_token
         )
-        print(type(user_info))
         email = user_info.get("email")
         name = user_info.get("name")
         google_id = user_info.get("sub")
@@ -287,9 +369,10 @@ async def google_callback(request: Request):
             user = existing_user[0]
             # If the existing user was created via email/password, prevent duplicate Google login
             if user.get("oauth_provider") == OAuthType.local.value:
-                raise HTTPException(
-                    status_code=400,
-                    detail="This email is already registered with a password. Please log in using email and password."
+                raise APIException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    message="This email is already registered with a password",
+                    detail="Please log in using email and password"
                 )
         else:
             new_user = UserInDB(
@@ -313,6 +396,6 @@ async def google_callback(request: Request):
         response.set_cookie("access_token", access_token, httponly=True, secure=True, samesite="Lax")
         response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True, samesite="Strict")
         return response
-    except Exception as e:
-        logger.error("Error occurred during Google OAuth callback: {err}",err=str(e))
-        raise HTTPException(status_code=400, detail="Error occurred during Google OAuth login")
+    except APIException as e:
+        logger.error("Error occurred during Google OAuth callback: {}", str(e))
+        raise e

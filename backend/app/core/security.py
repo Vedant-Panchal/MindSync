@@ -1,9 +1,11 @@
 from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import Request, Response, HTTPException,status
+from fastapi import HTTPException, Request, Response, status
 from jose import JWTError
 from app.core.config import ACCESS_TOKEN_EXPIRES_MINS
 from app.services.auth import decode_token, create_token
 from app.db.schemas.user import CreateOtpType
+from app.core.exceptions import APIException
+import json
 
 class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
@@ -33,7 +35,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
             if not access_token:
                 if not refresh_token:
-                    raise HTTPException(status_code=401, detail="Login Required")
+                    raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail="Unauthorized",
+                                       message="Login Required",
+                                       hint="Please login to access this resource")
 
                 try:
                     # Decode refresh token & generate new access token
@@ -55,18 +60,29 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     )
                     return response
                 except Exception as e:
-                    raise HTTPException(status_code=401, detail="Invalid refresh token")
+                    raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail="Invalid refresh token",
+                                       message="Unauthorized",
+                                       hint="Please login to access this resource")
 
             else:
                 try:
                     request.state.user = decode_token(access_token)
                     return await call_next(request)
                 except JWTError:
-                    raise HTTPException(status_code=401, detail="Unauthorized: Invalid token")
+                    raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                       detail="Invalid token",
+                                       message="The provided access token is invalid or expired",
+                                       hint="Please login again to obtain a new token")
 
-        except HTTPException as e:
-            return Response(content=f'{{"detail": "{e.detail}"}}', status_code=e.status_code)  
-
-        except Exception as e:
-            print(f"Internal Server Error: {str(e)}")  # Debugging
-            return Response(content=f'{{"detail": "Internal Server Error: {str(e)}"}}', status_code=500)
+        except APIException as e:
+            return Response(
+                content=json.dumps({
+                    "status_code": e.status_code,
+                    "detail": e.detail,
+                    "message": e.message,
+                    "hint": e.hint
+                }),
+                status_code=e.status_code,
+                media_type="application/json"
+            )

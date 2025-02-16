@@ -4,8 +4,8 @@ from app.core.config import JWT_SECRET, JWT_ALGO
 from jose import jwt,JWTError
 from datetime import datetime,timedelta,timezone
 from app.db.schemas.user import CreateOtpType
-from fastapi import Cookie, HTTPException,Depends,status
-
+from fastapi import HTTPException,status
+from app.core.exceptions import APIException
 
 passlibContext = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -40,6 +40,6 @@ def decode_token(token : str) :
         decoded_token =  jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
         return decoded_token
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise APIException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

@@ -1,6 +1,7 @@
 
-from fastapi import APIRouter, Depends, HTTPException,Request
+from fastapi import APIRouter, Request,status
 import httpx
+from app.core.exceptions import APIException
 
 router = APIRouter()
 
@@ -8,8 +9,12 @@ router = APIRouter()
 async def get_random_products(request: Request):
     user = getattr(request.state, "user", None)
 
-    if not user or user.get("email") != "dvijoza@gmail.com":  
-        raise HTTPException(status_code=403, detail="Forbidden: You are not allowed to access this resource")
+    if not user:  
+        raise APIException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="You are not authorized to access this resource",
+            detail="Please login to access this resource"
+        )
     
     url = "https://api.freeapi.app/api/v1/public/randomproducts"
     querystring = {

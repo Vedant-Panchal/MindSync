@@ -15,6 +15,6 @@ def verify_otp(email: str, entered_otp: str):
     if stored_otp is None:
         raise ValueError("Your OTP has expired. Please request a new one.")
     if stored_otp != entered_otp:
-        raise ValueError("Incorrect OTP")
+        raise ValueError("Your OTP is incorrect. Please try again.")
     redis_client.delete(email) 
     return True
