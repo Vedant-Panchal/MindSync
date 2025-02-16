@@ -159,12 +159,16 @@ async def signIn(response: Response, data: VerifyUser):
         logger.warning("Incorrect password for email: {}", data.email)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password")
 
-@router.post("/reset-password", response_model=None)
+@router.post("/reset-password")
 async def reset_password(email: EmailStr):
     user_data = get_user_by_email(email)
     if not user_data:
         logger.warning("No user exists with this email: {}", email)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="No User Exists With This Email")
+    elif user_data[0].get("oauth_provider") is not OAuthType.local.value:
+        logger.warning("User with email: {} is not registered with email/password", email)
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is not registered with email/password")
+        
     else:
         otp = str(uuid4().int)[:6]
         store_otp(email, otp)
@@ -263,6 +267,8 @@ async def google_callback(request: Request):
     id_token = token.get("id_token")
     access_token = token.get("access_token")
     try:
+        if not id_token or not access_token:
+            raise HTTPException(status_code=400, detail="Missing tokens")
         user_info = jwt.decode(
         id_token,
         requests.get(GOOGLE_JWKS_URL).json(),
@@ -270,30 +276,43 @@ async def google_callback(request: Request):
         audience=GOOGLE_CLIENT_ID,
         access_token=access_token
         )
-        print(user_info)
-        if not id_token or not access_token:
-            raise HTTPException(status_code=400, detail="Missing tokens")
-
-        if user_info:
-            user = get_user_by_email(email=user_info.get("email"))
-            if not user:
-                user = UserInDB(
-                    id=str(uuid4()),
-                    email=user_info.get("email"),
-                    username=str(user_info.get("name")),
-                    oauth_provider=OAuthType.google.value,
-                    oauth_id=user_info.get("sub"),
-                    password=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc),
-                    is_verified=True
+        print(type(user_info))
+        email = user_info.get("email")
+        name = user_info.get("name")
+        google_id = user_info.get("sub")
+        
+        user_id = str(uuid4())
+        existing_user = get_user_by_email(email)
+        if existing_user:
+            user = existing_user[0]
+            # If the existing user was created via email/password, prevent duplicate Google login
+            if user.get("oauth_provider") == OAuthType.local.value:
+                raise HTTPException(
+                    status_code=400,
+                    detail="This email is already registered with a password. Please log in using email and password."
                 )
-                db.table("users").insert(jsonable_encoder(user)).execute()
-                
-        return {
-            "message": "User signed in successfully using Google",
-            "details":token
-        }
+        else:
+            new_user = UserInDB(
+                id=user_id,
+                email=email,
+                username=name,
+                password=None,
+                oauth_provider=OAuthType.google.value,
+                oauth_id=google_id,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+                is_verified=True,
+            )
+            db.table("users").insert(jsonable_encoder(new_user)).execute()
+        userData = CreateOtpType(email=email, id=user_id)
+        access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
+        refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 2)
+
+        # Set cookies for tokens
+        response = RedirectResponse(url="http://localhost:8000/heartbeat")
+        response.set_cookie("access_token", access_token, httponly=True, secure=True, samesite="Lax")
+        response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True, samesite="Strict")
+        return response
     except Exception as e:
-        logger.error("Error during Google OAuth callback: {s}",s=str(e))
-        return str(e)
+        logger.error("Error occurred during Google OAuth callback: {err}",err=str(e))
+        raise HTTPException(status_code=400, detail="Error occurred during Google OAuth login")
