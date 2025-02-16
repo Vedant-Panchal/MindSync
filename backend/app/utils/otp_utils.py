@@ -1,22 +1,20 @@
-from datetime import datetime, timedelta, timezone
-from jose import jwt
-from jose.exceptions import JWTError,ExpiredSignatureError
-from app.core.config import JWT_SECRET,JWT_ALGO,OTP_EXPIRY_MINS
-
-def generate_otp_jwt(email: str, otp: str) -> str:
-    
-    payload = {
-        "email": email,
-        "otp": otp,
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=OTP_EXPIRY_MINS)
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
+from app.core.config import OTP_EXPIRY_MINS
+from app.core.connection import redis_client
+import logging
 
 
-def decode_otp_jwt(token: str) -> dict:
+def store_otp(email: str, otp: str):
     try:
-        return jwt.decode(token, JWT_SECRET, algorithms=JWT_ALGO)
-    except ExpiredSignatureError:
-        raise ValueError("OTP has expired")
-    except JWTError:
-        raise ValueError("Invalid OTP token")
+        redis_client.set(name=email, value=otp, ex=OTP_EXPIRY_MINS * 60)
+        logging.info(f"✅ OTP stored successfully in Redis for {email}")
+    except Exception as e:
+        logging.error(f"❌ Error storing OTP in Redis for {email}: {str(e)}")
+
+def verify_otp(email: str, entered_otp: str):
+    stored_otp = redis_client.get(name=email)
+    if stored_otp is None:
+        raise ValueError("Your OTP has expired. Please request a new one.")
+    if stored_otp != entered_otp:
+        raise ValueError("Incorrect OTP")
+    redis_client.delete(email) 
+    return True
