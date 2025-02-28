@@ -25,8 +25,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/auth/v1/google/callback"
         }  # Public routes
 
+
+
+    # print("IN Security")
     async def dispatch(self, request: Request, call_next):
         try:
+            print(f"Request path: {request.url.path}")
             if request.url.path in self.excluded_paths:
                 return await call_next(request)
 
@@ -53,7 +57,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     response.set_cookie(
                         key="access_token",
                         value=new_access_token,
-                        max_age=ACCESS_TOKEN_EXPIRES_MINS,
+                        max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,
                         httponly=True,
                         secure=True,
                         samesite="Lax"

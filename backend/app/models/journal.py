@@ -6,6 +6,7 @@ from uuid import UUID
 # Journal Schemas (CRUD)
 # ----------------------
 
+
 class JournalBase(BaseModel):
     content: str
     is_draft: bool = False
