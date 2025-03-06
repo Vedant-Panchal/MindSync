@@ -28,7 +28,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def create_token(data: CreateOtpType,expire : int):
     toEncode:dict[str,any] = {
         "email" : data.email,
-        "id": data.id
+        "id": data.id,
+        "username": data.username,
     }
     expireIn = datetime.now(timezone.utc) + timedelta(minutes=expire)
     toEncode.update({"exp": expireIn})

@@ -21,7 +21,7 @@ REDIS_PASSWORD:str = os.getenv("UPSTASH_REDIS_PASSWORD")
 GOOGLE_CLIENT_ID : str = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_SECRET_KEY : str = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_URI : str = os.getenv("GOOGLE_REDIRECT_URI")
-
+ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
 # Log configuration values
 logger.success("JWT Algorithm: {algo} 🔐", algo=JWT_ALGO)

@@ -82,15 +82,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     onSuccess: () => navigate(paths.auth.login.getHref(location.pathname)),
   });
   const { checkAccess } = useAuthorization();
-  const navigation = [
-    { name: 'Dashboard', to: paths.app.dashboard.getHref(), icon: Home },
-    { name: 'Discussions', to: paths.app.discussions.getHref(), icon: Folder },
-    checkAccess({ allowedRoles: [ROLES.ADMIN] }) && {
-      name: 'Users',
-      to: paths.app.users.getHref(),
-      icon: Users,
-    },
-  ].filter(Boolean) as SideNavigationItem[];
+  // const navigation = [
+  //   { name: 'Dashboard', to: paths.app.dashboard.getHref(), icon: Home },
+  //   // { name: 'Discussions', to: paths.app.discussions.getHref(), icon: Folder },
+  //   checkAccess({ allowedRoles: [ROLES.ADMIN] }) && {
+  //     name: 'Users',
+  //     // to: paths.app.users.getHref(),
+  //     icon: Users,
+  //   },
+  // ].filter(Boolean) as SideNavigationItem[];
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">

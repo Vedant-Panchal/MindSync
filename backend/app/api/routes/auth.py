@@ -22,10 +22,14 @@ from starlette.responses import RedirectResponse
 from app.services.google_oauth import GOOGLE_JWKS_URL, oauth
 from app.models.auth import OAuthType
 from app.core.exceptions import APIException
-
+from app.core.config import ENVIRONMENT
 router = APIRouter()
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+
+@router.get("/me")
+async def get_me(request: Request):
+    return request.state.user  # User is already set by middleware
 
 @router.post("/sign-up")
 async def sign_up(data: SignUpType):
@@ -56,6 +60,7 @@ async def sign_up(data: SignUpType):
 async def verify(response: Response, data: create_user):
     email = data.email
     password = data.password
+    username = data.username
     logger.info("Attempting to verify user with email: {}", data.email)
     if not re.fullmatch(PASSWORD_REGEX, password):
         logger.warning("Password does not meet criteria for email: {}", email)
@@ -82,7 +87,8 @@ async def verify(response: Response, data: create_user):
         )
         userData = CreateOtpType(
             email=email,
-            id=id
+            id=id,
+            username=username
         )
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
         refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 2)
@@ -93,7 +99,7 @@ async def verify(response: Response, data: create_user):
             value=access_token,
             max_age=ACCESS_TOKEN_EXPIRES_MINS,  # in seconds
             httponly=True,
-            secure=True,
+            secure=(ENVIRONMENT == "production"),
             samesite="Lax"
         )
 
@@ -102,7 +108,7 @@ async def verify(response: Response, data: create_user):
             value=refresh_token,
             max_age=REFRESH_TOKEN_EXPIRES_DAYS,  # Convert days to seconds
             httponly=True,
-            secure=True,
+            secure=(ENVIRONMENT == "production"),
             samesite="Strict"
         )
         logger.success("User created successfully with email: {}", email)
@@ -166,9 +172,9 @@ async def signIn(response: Response, data: VerifyUser):
     is_verified = verify_pass(data.password, existing_user.password)
     
     if is_verified:
-        userData = CreateOtpType(email=existing_user.email, id=existing_user.id)
+        userData = CreateOtpType(email=existing_user.email, id=existing_user.id,username=existing_user.username)
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-        refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 3)
+        refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60)
         response.set_cookie(
             key="access_token",
             value=access_token,
@@ -180,9 +186,9 @@ async def signIn(response: Response, data: VerifyUser):
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            max_age=ACCESS_TOKEN_EXPIRES_MINS * 3 * 60,  # Convert days to seconds
+            max_age=REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60,  # Convert days to seconds
             httponly=True,
-            secure=True,
+            secure=(ENVIRONMENT == "production"),
             samesite="Strict"
         )
         logger.success("User signed in successfully with email: {}", data.email)
@@ -303,7 +309,8 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
         decoded_token = decode_token(refresh_token)
         existing_user = CreateOtpType(
             email=decoded_token["email"],
-            id=decoded_token["id"]
+            id=decoded_token["id"],
+            username=decoded_token["username"]
         )
         new_access_token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS)
         response.set_cookie(
@@ -311,7 +318,7 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
             value=new_access_token,
             max_age=ACCESS_TOKEN_EXPIRES_MINS,
             httponly=True,
-            secure=True,
+            secure=(ENVIRONMENT == "production"),
             samesite="Lax"
         )
         logger.success("Access token refreshed successfully for email: {}", decoded_token["email"])
@@ -393,8 +400,8 @@ async def google_callback(request: Request):
 
         # Set cookies for tokens
         response = RedirectResponse(url="http://localhost:8000/heartbeat")
-        response.set_cookie("access_token", access_token, httponly=True, secure=True, samesite="Lax")
-        response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True, samesite="Strict")
+        response.set_cookie("access_token", access_token, httponly=True, secure=(ENVIRONMENT == "production"), samesite="Lax")
+        response.set_cookie("refresh_token", refresh_token, httponly=True, secure=(ENVIRONMENT == "production"), samesite="Strict")
         return response
     except APIException as e:
         logger.error("Error occurred during Google OAuth callback: {}", str(e))

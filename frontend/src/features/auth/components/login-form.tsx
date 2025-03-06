@@ -3,23 +3,44 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router";
-
+import { Link, useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { LoginInput, loginInputSchema, useLogin } from "@/lib/auth";
+import { api } from "@/lib/api-client";
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(loginInputSchema) });
+  const navigate = useNavigate();
+  const login = useLogin({
+    onSuccess: () => {
+      navigate("/app", { replace: true });
+    },
+  });
+
+  const onSubmit = async (data: LoginInput) => {
+    login.mutate(data);
+  };
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="grid p-0">
-          <form className="p-6 md:p-8">
+          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-start justify-start gap-1">
                 <h1 className="text-xl font-bold text-gray-900 md:text-2xl dark:text-white">
                   Login
                 </h1>
-                <p className="text-sm">Enter your email below to login to your account</p>
+                <p className="text-sm">
+                  Enter your email below to login to your account
+                </p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
@@ -27,8 +48,13 @@ export function LoginForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
-                  required
+                  {...register("email")}
                 />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
@@ -40,7 +66,17 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" placeholder="••••••••" required />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  {...register("password")}
+                />
+                {errors.password && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
               <Button type="submit" className="w-full cursor-pointer">
                 Login
@@ -63,7 +99,10 @@ export function LoginForm({
               </div>
               <div className="text-center text-sm">
                 Don&apos;t have an account?{" "}
-                <Link to={"/signup"} className="underline underline-offset-4 cursor-pointer">
+                <Link
+                  to={"/auth/signup"}
+                  className="underline underline-offset-4 cursor-pointer"
+                >
                   Sign up
                 </Link>
               </div>

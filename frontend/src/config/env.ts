@@ -5,7 +5,6 @@ const createEnv = () => {
     API_URL: z.string(),
     APP_URL: z.string().optional().default('http://localhost:5173'),
   });
-  console.log(import.meta.env);
 
   const envVars = Object.entries(import.meta.env).reduce<
     Record<string, string>

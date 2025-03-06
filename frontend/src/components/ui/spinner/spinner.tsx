@@ -4,7 +4,6 @@ ring.register();
 
 function Spinner() {
   return (
-    // Default values shown
     <l-ring
       size="40"
       stroke="5"

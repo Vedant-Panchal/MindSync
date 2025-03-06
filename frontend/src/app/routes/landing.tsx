@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { Brain, LineChart, MessageSquareText, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { paths } from '@/config/paths';
 
 const Landing = () => {
   return (
@@ -12,10 +13,10 @@ const Landing = () => {
             <span className="text-2xl font-display text-foreground">MindSync</span>
           </div>
           <div className="flex items-center space-x-4">
-            <Link to="/signin">
+            <Link to={paths.auth.login.path}>
               <Button variant="ghost">Sign In</Button>
             </Link>
-            <Link to="/signup">
+            <Link to={paths.auth.signup.path}>
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -27,7 +28,7 @@ const Landing = () => {
         <div className="relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,var(--primary)_0%,transparent_50%)] opacity-20" />
           <div className="relative text-center max-w-4xl mx-auto">
-            <h1 className="text-6xl font-display font-bold text-foreground mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+            <h1 className="text-6xl font-display font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
               Transform Your Journaling Experience with AI
             </h1>
             <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">

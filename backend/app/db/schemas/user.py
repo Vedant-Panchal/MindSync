@@ -71,6 +71,7 @@ class ResetPasswordRequest(BaseModel):
 
 
 class CreateOtpType(BaseModel):
+    username : str
     email : str
     id : str
 

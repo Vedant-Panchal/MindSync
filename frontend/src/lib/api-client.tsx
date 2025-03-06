@@ -1,22 +1,21 @@
 import Axios, { InternalAxiosRequestConfig } from 'axios';
-
-// import { useNotifications } from '@/components/ui/notifications';
 import { env } from '@/config/env';
 import { paths } from '@/config/paths';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 function authRequestInterceptor(config: InternalAxiosRequestConfig) {
   if (config.headers) {
     config.headers.Accept = 'application/json';
   }
-
-  config.withCredentials = true;
   return config;
 }
 
 export const api = Axios.create({
-  baseURL: env.API_URL,
+  baseURL: "http://localhost:8000",
+  withCredentials:true
 });
-
+api.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 api.interceptors.request.use(authRequestInterceptor);
 api.interceptors.response.use(
   (response) => {
@@ -24,18 +23,21 @@ api.interceptors.response.use(
   },
   (error) => {
     const message = error.response?.data?.message || error.message;
-    useNotifications.getState().addNotification({
-      type: 'error',
-      title: 'Error',
-      message,
+    toast.error(message, {
+      duration: 4000, // 4 seconds
+      position: "top-right",
+      ariaProps: {
+        role: "alert",
+        "aria-live": "polite",
+      },
     });
 
-    if (error.response?.status === 401) {
-      const searchParams = new URLSearchParams();
-      const redirectTo =
-        searchParams.get('redirectTo') || window.location.pathname;
-      window.location.href = paths.auth.login.getHref(redirectTo);
-    }
+    // if (error.response?.status === 401) {  
+    //   const searchParams = new URLSearchParams();
+    //   const redirectTo =
+    //     searchParams.get('redirectTo') || window.location.pathname;
+    //   window.location.href = paths.auth.login.getHref(redirectTo);
+    // }
 
     return Promise.reject(error);
   },
