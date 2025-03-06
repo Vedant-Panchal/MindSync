@@ -91,13 +91,13 @@ async def verify(response: Response, data: create_user):
             username=username
         )
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-        refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 2)
+        refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 )
         db.table("users").insert(jsonable_encoder(user)).execute()
         
         response.set_cookie(
             key="access_token",
             value=access_token,
-            max_age=ACCESS_TOKEN_EXPIRES_MINS,  # in seconds
+            max_age=ACCESS_TOKEN_EXPIRES_MINS * 60, # convert mins to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
             samesite="Lax"
@@ -106,7 +106,7 @@ async def verify(response: Response, data: create_user):
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            max_age=REFRESH_TOKEN_EXPIRES_DAYS,  # Convert days to seconds
+            max_age=REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60,  # Convert days to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
             samesite="Strict"

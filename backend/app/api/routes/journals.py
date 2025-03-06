@@ -1,31 +1,75 @@
-
-from fastapi import APIRouter, Request,status
-import httpx
+from fastapi import APIRouter, Request, status
+from datetime import date, datetime, timezone
+from uuid import uuid4
+from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
+from app.db.schemas.journal import DraftCreate,DraftRequest
+from app.core.connection import db
+from fastapi.encoders import jsonable_encoder
+
+from app.utils.otp_utils import store_draft, store_otp
+from app.utils.utils import submit_draft
 
 router = APIRouter()
 
-@router.get("/random-products")
-async def get_random_products(request: Request):
+@router.post("/drafts")
+async def save_drafts(request: Request, draft: DraftRequest):
     user = getattr(request.state, "user", None)
-
-    if not user:  
+    print(f"User {user}, User ID type: {type(user['id'])}")
+    if not user:
         raise APIException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             message="You are not authorized to access this resource",
             detail="Please login to access this resource"
         )
+    if not draft.content:
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="NO Content To save",
+            detail="There is Nothing Written To Save",
+            hint="Write Something"
+        )
     
-    url = "https://api.freeapi.app/api/v1/public/randomproducts"
-    querystring = {
-        "page": "1", 
-        "limit": "10", 
-        "inc": "category,price,thumbnail,images,title,id", 
-        "query": "mens-watches"
-    }
-    headers = {"accept": "application/json"}
+    try:
+        today = date.today().isoformat()
+        redis_key = f"Draft:{user['id']}:{today}"
+        draft_data = {
+            "content": draft.content,
+            "date": today,
+            "user_id": user['id']
+        }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers, params=querystring)
+            
+        print(f"Draft Data : {draft_data} And Type of Draft Data : {type(draft_data)}")
+        store_draft(draft_data,redis_key)
+        # store_otp("mohammedrupawala8@gmail.com","123456")
+        print("Called Store_otp")
 
-    return response.json()
+        return {
+            "message" : "Stored Data In Redis",
+            "draft_data" : draft_data
+        }
+        
+    except Exception as e:
+        APIException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=str(e),
+                    message="An Error Has Occured"
+                    )
+        
+
+
+@router.post("/test")
+async def testing():
+    try:
+        variable_test = submit_draft()
+        return {
+            "message" : variable_test
+        }
+    except Exception as e:
+        raise APIException(
+            status_code=400,
+            detail=str(e),
+            message=f"Error occurred: {str(e)}"
+        )
+

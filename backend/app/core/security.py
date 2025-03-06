@@ -26,6 +26,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/auth/v1/google/callback"
         }  # Public routes
 
+
+
+    # print("IN Security")
     async def dispatch(self, request: Request, call_next):
         try:
             # Skip ALL OPTIONS requests to let CORSMiddleware handle them
@@ -58,7 +61,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     response.set_cookie(
                         key="access_token",
                         value=new_access_token,
-                        max_age=ACCESS_TOKEN_EXPIRES_MINS,
+                        max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,
                         httponly=True,
                         secure=(ENVIRONMENT == "production"),
                         samesite="Lax"
