@@ -15,7 +15,7 @@ type LayoutProps = {
 export const AuthLayout = ({ children, title }: LayoutProps) => {
   const user = useUser();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("re directTo");
+  const redirectTo = searchParams.get("redirectTo");
   const navigate = useNavigate();
 
   useEffect(() => {
