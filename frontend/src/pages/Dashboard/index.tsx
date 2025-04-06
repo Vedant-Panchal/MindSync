@@ -1,38 +1,33 @@
-import Heatmap from "@/components/Heatmap";
+import { AppSidebar } from "@/components/app-sidebar";
+import { ChartAreaInteractive } from "@/components/chart-area-interactive";
+import { DataTable } from "@/components/data-table";
 import { SectionCards } from "@/components/section-cards";
-
-// import { useKiteUser } from "@/hooks/kite";
-import { SectorPieChart } from "@/components/SectorPieChart";
-import { StockRecommendations } from "@/components/StockRecommendations";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { getSidebarData } from "@/pages/Dashboard/sidebardata";
+import data from "./data.json";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function Dashboard() {
-  // const { data } = useKiteUser();
+  const user = useAuthStore((state) => state.user);
+  const sidebardata = getSidebarData(user!);
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <SectionCards />
-          <div className="grid grid-cols-2 gap-5">
-            <div>
-              <h2 className="mb-2 text-2xl font-bold tracking-tight">
-                Sector Wise Chart
-              </h2>
-              <SectorPieChart />
-            </div>
-            <div className="bg-white overflow-hidden rounded-lg shadow-xl">
-              <h2 className="mb-2 text-2xl font-bold tracking-tight">
-                NIFTY 50 Heatmap
-              </h2>
-              <Heatmap />
+    <SidebarProvider>
+      <AppSidebar variant="inset" data={sidebardata} />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <SectionCards />
+              <div className="px-4 lg:px-6">
+                <ChartAreaInteractive />
+              </div>
+              <DataTable data={data} />
             </div>
           </div>
-          {/* <div className="px-4 lg:px-6">
-            <ChartAreaInteractive />
-          </div> */}
-          <StockRecommendations />
         </div>
-      </div>
-      {/* {JSON.stringify(data)} */}
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

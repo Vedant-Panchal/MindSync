@@ -56,8 +56,6 @@ async def save_drafts(request: Request, draft: DraftRequest):
                     detail=str(e),
                     message="An Error Has Occured"
                     )
-        
-
 
 @router.post("/test")
 async def testing():
