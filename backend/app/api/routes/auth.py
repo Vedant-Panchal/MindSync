@@ -394,12 +394,12 @@ async def google_callback(request: Request):
                 is_verified=True,
             )
             db.table("users").insert(jsonable_encoder(new_user)).execute()
-        userData = CreateOtpType(email=email, id=user_id)
+        userData = CreateOtpType(email=email, id=user_id,username=name)
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
         refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 2)
 
         # Set cookies for tokens
-        response = RedirectResponse(url="http://localhost:8000/heartbeat")
+        response = RedirectResponse(url="http://localhost:5173/app/dashboard")
         response.set_cookie("access_token", access_token, httponly=True, secure=(ENVIRONMENT == "production"), samesite="Lax")
         response.set_cookie("refresh_token", refresh_token, httponly=True, secure=(ENVIRONMENT == "production"), samesite="Strict")
         return response

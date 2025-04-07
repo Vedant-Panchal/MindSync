@@ -7,6 +7,7 @@ export const queryConfig = {
     retry: false,
     staleTime: 1000 * 60,
   },
+  
 } satisfies DefaultOptions;
 
 export type ApiFnReturnType<FnType extends (...args: any) => Promise<any>> =

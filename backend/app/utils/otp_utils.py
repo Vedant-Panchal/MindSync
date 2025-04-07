@@ -33,8 +33,8 @@ def store_draft(draft_data: dict[str,any], redis_key: str):
 def verify_otp(email: str, entered_otp: str):
     stored_otp = redis_client.get(name=email)
     if stored_otp is None:
-        raise ValueError("Your OTP has expired. Please request a new one.")
+        raise ValueError("Your OTP has expired")
     if stored_otp != entered_otp:
-        raise ValueError("Your OTP is incorrect. Please try again.")
+        raise ValueError("Your OTP is incorrect")
     redis_client.delete(email) 
     return True

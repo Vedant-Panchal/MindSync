@@ -1,20 +1,36 @@
-import { Outlet, createRootRoute } from "@tanstack/react-router";
+import {
+  Outlet,
+  createRootRoute,
+  useRouterState,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Link } from "@tanstack/react-router";
 import NotFound from "@/assets/NotFound.svg";
+import { Spinner } from "@/components/ui/spinner";
+
 export const Route = createRootRoute({
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
 
 function RootComponent() {
+  const isLoading = useRouterState({ select: (s) => s.status === "pending" });
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background">
+        <Spinner />
+      </div>
+    );
+  }
   return (
-    <div className="h-screen w-screen antialiased">
+    <div className="h-screen w-screen antialiased relative">
       <Outlet />
-      <TanStackRouterDevtools />
+      {import.meta.env.DEV && <TanStackRouterDevtools />}
     </div>
   );
 }
+
 function NotFoundComponent() {
   return (
     <div className="grid h-screen place-content-center bg-white px-4">

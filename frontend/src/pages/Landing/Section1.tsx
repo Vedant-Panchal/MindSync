@@ -16,7 +16,7 @@ const navigation = [
   { name: "About", href: "#" },
 ];
 
-export default function Section1() {
+export default function Section1({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <div className="bg-white">
       <header className="absolute inset-x-0 top-0 z-50">
@@ -78,13 +78,21 @@ export default function Section1() {
             ))}
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-            <Link
-              to="/signin"
-              className={`group flex items-center justify-between space-x-1 rounded-xl bg-pink-100 px-4 py-2 text-sm leading-6 font-semibold text-gray-900`}
-            >
-              <span>Log in</span>
-              <ArrowRight className="size-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to="/app/dashboard"
+                className="rounded-md bg-pink-500 px-3.5 py-1.5 text-sm font-semibold text-gray-100 shadow-xs hover:bg-pink-450 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/signin"
+                className="rounded-md bg-pink-500 px-3.5 py-1.5 text-sm font-semibold text-gray-100 shadow-xs hover:bg-pink-450 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-600"
+              >
+                Log in
+              </Link>
+            )}
           </div>
         </nav>
       </header>
@@ -120,7 +128,9 @@ export default function Section1() {
               transition={{ delay: 0.7, duration: 0.7 }}
             >
               <p className="mt-8 text-lg font-medium text-pretty text-gray-500 sm:text-xl/8">
-                Transform your daily thoughts into meaningful insights with our AI-powered journaling platform. Track patterns, receive personalized reflections, and grow with every entry you make.
+                Transform your daily thoughts into meaningful insights with our
+                AI-powered journaling platform. Track patterns, receive
+                personalized reflections, and grow with every entry you make.
               </p>
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link

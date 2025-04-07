@@ -1,46 +1,66 @@
-import { StrictMode, Suspense } from "react";
+import { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import "./index.css";
 import { ErrorBoundary } from "react-error-boundary";
-// Import the generated route tree
-import { routeTree } from "./routeTree.gen";
-import Spinner from "@/components/ui/spinner/spinner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MainErrorFallback } from "@/components/errors/main";
 import { Toaster } from "react-hot-toast";
 import { queryConfig } from "@/lib/react-query";
+import { routeTree } from "@/routeTree.gen";
+import { useAuthStore, User } from "@/stores/authStore";
+import API_PATHS from "@/config/api-paths";
+import { api } from "@/lib/api-client";
+import { Spinner } from "@/components/ui/spinner";
 
-// Create a new router instance
-const router = createRouter({ routeTree });
+const queryClient = new QueryClient({
+  defaultOptions: queryConfig,
+});
 
-// Register the router instance for type safety
+export const router = createRouter({
+  routeTree,
+});
+
 declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
 }
-const queryClient = new QueryClient({
-  defaultOptions: queryConfig,
-});
+const preloadUser = async () => {
+  const existingUser = useAuthStore.getState().user;
+  if (existingUser) {
+    console.log("User already loaded:", existingUser);
+    return;
+  }
 
-createRoot(document.getElementById("root")!).render(
-  <>
-    <Suspense
-      fallback={
-        <div className="flex h-screen w-screen items-center justify-center">
-          <Spinner />
-        </div>
-      }
-    >
+  try {
+    const user: User = await api.get(API_PATHS.AUTH.GET_ME);
+    console.log("User fetched:", user); // Debug log
+    useAuthStore.setState({ user });
+  } catch (error) {
+    console.error("Failed to fetch user:", error); // Debug log
+    useAuthStore.setState({ user: null });
+  }
+};
+
+preloadUser().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <QueryClientProvider client={queryClient}>
       <ErrorBoundary FallbackComponent={MainErrorFallback}>
-        <RouterProvider router={router} />
-        <QueryClientProvider client={queryClient}>
-          {import.meta.env.DEV && <ReactQueryDevtools />}
-          <Toaster position="top-right" />
-        </QueryClientProvider>
+        <Suspense>
+          <RouterProvider
+            router={router}
+            defaultPendingComponent={() => (
+              <div className="h-screen w-screen flex items-center justify-center bg-background">
+                <Spinner />
+              </div>
+            )}
+          />
+        </Suspense>
+        {import.meta.env.DEV && <ReactQueryDevtools />}
+        <Toaster position="top-center" />
       </ErrorBoundary>
-    </Suspense>
-  </>
-);
+    </QueryClientProvider>
+  );
+});
