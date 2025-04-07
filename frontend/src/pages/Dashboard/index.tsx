@@ -7,10 +7,16 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { getSidebarData } from "@/pages/Dashboard/sidebardata";
 import data from "./data.json";
 import { useAuthStore } from "@/stores/authStore";
+import { useAvatar } from "@/hooks/useAvatar";
 
 export default function Dashboard() {
-  const user = useAuthStore((state) => state.user);
-  const sidebardata = getSidebarData(user!);
+  const currentUser = useAuthStore((state) => state.user);
+  const avatarSrc = useAvatar(currentUser?.username!);
+  const user = {
+    ...currentUser,
+    avatar: avatarSrc,
+  };
+  const sidebardata = getSidebarData(user);
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" data={sidebardata} />

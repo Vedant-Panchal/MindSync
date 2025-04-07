@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginInput, loginInputSchema, useLogin } from "@/lib/auth";
+import { getUser, LoginInput, loginInputSchema, useLogin } from "@/lib/auth";
 import { Spinner } from "@/components/ui/spinner";
 import toast from "react-hot-toast";
 import API_PATHS from "@/config/api-paths";
-
+import MindSyncLogo from "@/assets/logo.svg?react";
+import { useAuthStore } from "@/stores/authStore";
 export function LoginForm({
   className,
   ...props
@@ -22,18 +23,18 @@ export function LoginForm({
   } = useForm({ resolver: zodResolver(loginInputSchema) });
   const navigate = useNavigate();
   const { isPending, mutate: login } = useLogin({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Login successful!");
+      const user = await getUser();
+      useAuthStore.getState().setUser(user);
       navigate({ to: "/app/dashboard" });
     },
-    onError: (data: any) => {
-      toast.error(data.error.detail);
+    onError: (error: any) => {
+      toast.error(error.detail);
     },
   });
   const handleGoogleLogin = async () => {
-    window.location.href = `${import.meta.env.API_URL}/${
-      API_PATHS.AUTH.GOOGLE_LOGIN
-    }`;
+    window.location.href = `http://localhost:8000${API_PATHS.AUTH.GOOGLE_LOGIN}`;
   };
   const onSubmit = async (data: LoginInput) => {
     console.log(data);
@@ -44,8 +45,15 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="grid p-0">
-          <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
-            <div className="flex flex-col gap-6">
+          <form
+            className="p-6 md:px-8 md:py-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <div className="flex w-full items-center justify-center -mt-4 space-x-3">
+              <MindSyncLogo className="size-5 fill-slate-900" />
+              <div className="text-xl font-bold text-slate-900">MindSync</div>
+            </div>
+            <div className="flex flex-col gap-6 mt-5">
               <div className="flex flex-col items-start justify-start gap-1">
                 <h1 className="text-xl font-bold text-gray-900 md:text-2xl dark:text-white">
                   Login
@@ -95,7 +103,11 @@ export function LoginForm({
                 className="w-full cursor-pointer"
                 disabled={isPending}
               >
-                {isPending ? <Spinner /> : "Continue"}
+                {isPending ? (
+                  <Spinner className="stroke-accent md:size-5" />
+                ) : (
+                  "Continue"
+                )}
               </Button>
               <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="relative z-10 bg-background px-2 text-muted-foreground">
@@ -107,6 +119,7 @@ export function LoginForm({
                   variant="outline"
                   className="w-full cursor-pointer"
                   onClick={handleGoogleLogin}
+                  type="button"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <path

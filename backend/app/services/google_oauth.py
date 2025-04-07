@@ -10,7 +10,7 @@ oauth.register(
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_SECRET_KEY,
     authorize_url="https://accounts.google.com/o/oauth2/auth",
-    authorize_params=None,
+    authorize_params={"include_granted_scopes": "true"},
     authorize_state=JWT_SECRET,
     access_token_url="https://oauth2.googleapis.com/token",
     access_token_params=None,

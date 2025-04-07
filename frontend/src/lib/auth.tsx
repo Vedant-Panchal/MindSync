@@ -9,7 +9,7 @@ import { useAuthStore, User } from "@/stores/authStore";
 // api call definitions for auth (types, schemas, requests):
 // these are not part of features as this is a module shared across features
 
-const getUser = async (): Promise<User> => {
+export const getUser = async (): Promise<User> => {
   const user: User = await api.get(`${API_PATHS.AUTH.GET_ME}`);
   useAuthStore.getState().setUser(user); // Correct setter function
   return user;
@@ -37,10 +37,6 @@ export const loginInputSchema = z.object({
 export type LoginInput = z.infer<typeof loginInputSchema>;
 const loginWithEmailAndPassword = async (data: LoginInput): Promise<any> => {
   const response = await api.post(API_PATHS.AUTH.SIGN_IN, data);
-  if (response.status === 200) {
-    const user: User = await api.get(`${API_PATHS.AUTH.GET_ME}`);
-    useAuthStore.getState().setUser(user);
-  }
   return response;
 };
 

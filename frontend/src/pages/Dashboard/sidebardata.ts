@@ -1,4 +1,4 @@
-import { useAuthStore, User } from "@/stores/authStore";
+import { User } from "@/stores/authStore";
 import {
     IconCamera,
     IconChartBar,
@@ -16,14 +16,13 @@ import {
     IconUsers,
 } from "@tabler/icons-react";
 
-export const getSidebarData = (user: User) => {
+export const getSidebarData = (user: any) => {
 
     return {
         user: {
             name: user?.username || "Guest",
             email: user?.email || "guest@example.com",
-            // avatar: `${user?.username[0].toUpperCase()} + ${user?.username.split(" ")[1]?.[0].toUpperCase()}`,
-            avatar: `/avatar/${user?.username}.png`,
+            avatar: user?.avatar || "Test User",
         },
         navMain: [
             {

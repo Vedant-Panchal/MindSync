@@ -27,7 +27,7 @@ api.interceptors.response.use(
     const isAuthPage =
       location.startsWith("/signin") || location.startsWith("/signup");
 
-    const message = error.response?.data || error.message;
+    const message = error.response?.data?.error || error.message;
     if (error.response?.status === 401) {
       if (!isLandingPage && !isAuthPage) {
         useAuthStore.getState().setUser(null);
