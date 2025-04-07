@@ -3,12 +3,13 @@ from datetime import date, datetime, timezone
 from uuid import uuid4
 from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
-from app.db.schemas.journal import DraftCreate,DraftRequest
+from app.db.schemas.journal import ChatbotType, DraftCreate,DraftRequest
 from app.core.connection import db
 from fastapi.encoders import jsonable_encoder
 
 from app.utils.otp_utils import store_draft, store_otp
 from app.utils.utils import submit_draft
+from app.utils.chatbot_utils import get_journals_by_date, query_parser
 
 router = APIRouter()
 
@@ -36,7 +37,8 @@ async def save_drafts(request: Request, draft: DraftRequest):
         draft_data = {
             "content": draft.content,
             "date": today,
-            "user_id": user['id']
+            "user_id": user['id'],
+            "tags" : draft.tags
         }
 
             
@@ -60,7 +62,7 @@ async def save_drafts(request: Request, draft: DraftRequest):
 
 
 @router.post("/test")
-async def testing():
+async def save_draft():
     try:
         variable_test = submit_draft()
         return {
@@ -72,4 +74,29 @@ async def testing():
             detail=str(e),
             message=f"Error occurred: {str(e)}"
         )
+    
+
+@router.post('/chatbot')
+async def getQuery(request : Request,user_query : ChatbotType):
+    if not user_query.query:
+         raise APIException(
+            status_code=400,
+            detail="Enter A Query",
+            message=f"No Query"
+        )
+    
+    result = query_parser(user_query.query)
+    start_date = result['date_range']['start']
+    end_date = result['date_range']['end']
+    print(start_date)
+    user = getattr(request.state,'user',None)
+    data_by_date = get_journals_by_date(user['id'],start_date=start_date,end_date=end_date)
+    if len(data_by_date) == 0:
+        print("No Journal entry")
+
+    for i in  data_by_date:
+        # print(i['text'])
+        print(i)
+    
+    return result
 

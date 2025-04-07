@@ -6,10 +6,12 @@ from typing import Optional, Dict, List
 # Draft schema (for Redis storage, YYYY-MM-DD date)
 class DraftRequest(BaseModel):
     content : str
+    tags : Dict
 class DraftCreate(BaseModel):
     content: str
     user_id: UUID
-    date: str 
+    date: str
+    tags : Dict
 
 # Journal schema
 class JournalCreate(BaseModel):
@@ -24,8 +26,9 @@ class Journal(BaseModel):
     text: str  # NOT NULL
     date: date  # date type, NOT NULL
     moods: Optional[Dict] = None  # jsonb, optional
-    tags: Optional[Dict] = None  # jsonb, optional
-    embedding: Optional[List[float]] = None  # vector(768), optional for response
+    tags: Dict
+    embedding: Optional[List[float]] = None,  # vector(768), optional for response
+    created_at: datetime
 
 # Journal Section (Chunk) schema
 class JournalSectionCreate(BaseModel):
@@ -40,7 +43,9 @@ class JournalSection(BaseModel):
     section_number: int  # NOT NULL
     text: str  # NOT NULL
     moods: Dict  # jsonb, NOT NULL
-    embedding: Optional[List[float]] = None  # vector(768), optional for response
+    embedding: List[float]  # vector(768), optional for response
     created_at: date  # date type, NOT NULL
 
-   
+class ChatbotType(BaseModel):
+    query : str
+ 
