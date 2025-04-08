@@ -19,6 +19,7 @@ class APIException(Exception):
         self.detail = detail
         self.hint = hint
 
+
 async def api_exception_handler(request: Request, exc: APIException):
     error_response = {
         "error": {
@@ -30,6 +31,7 @@ async def api_exception_handler(request: Request, exc: APIException):
     }
     logging.error(f"APIException: {error_response}")
     return JSONResponse(status_code=exc.status_code, content=error_response)
+
 
 async def generic_exception_handler(request: Request, exc: Exception):
     logging.critical(f"Unhandled Exception: {exc}")

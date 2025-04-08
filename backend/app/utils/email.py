@@ -1,18 +1,18 @@
 import requests
 from app.core.config import RESEND_KEY
 
+
 def send_otp_email(email: str, otp: str):
     url = "https://api.resend.com/emails"
     headers = {
         "Authorization": f"Bearer {RESEND_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
     payload = {
         "from": "MindSync <no-reply@flamin.live>",
         "to": [email],
         "subject": "Your verification code for MindSync",
-        "html": 
-        f"""
+        "html": f"""
         <!doctype html>
         <html lang="en">
           <head>
@@ -49,9 +49,9 @@ def send_otp_email(email: str, otp: str):
           </body>
         </html>
 
-         """
+         """,
     }
     response = requests.post(url, headers=headers, json=payload)
-    
+
     if response.status_code != 200:
         raise Exception(f"Failed to send email: {response.text}")

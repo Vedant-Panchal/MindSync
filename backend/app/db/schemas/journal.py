@@ -3,13 +3,17 @@ from uuid import UUID
 from datetime import datetime, date
 from typing import Optional, Dict, List
 
+
 # Draft schema (for Redis storage, YYYY-MM-DD date)
 class DraftRequest(BaseModel):
-    content : str
+    content: str
+
+
 class DraftCreate(BaseModel):
     content: str
     user_id: UUID
-    date: str 
+    date: str
+
 
 # Journal schema
 class JournalCreate(BaseModel):
@@ -27,12 +31,14 @@ class Journal(BaseModel):
     tags: Optional[Dict] = None  # jsonb, optional
     embedding: Optional[List[float]] = None  # vector(768), optional for response
 
+
 # Journal Section (Chunk) schema
 class JournalSectionCreate(BaseModel):
     text: str  # Matches 'text' in journal_sections table
     journal_id: UUID
     section_number: int  # NOT NULL
     moods: Dict  # jsonb, NOT NULL
+
 
 class JournalSection(BaseModel):
     id: UUID  # Primary Key, NOT NULL
@@ -42,5 +48,3 @@ class JournalSection(BaseModel):
     moods: Dict  # jsonb, NOT NULL
     embedding: Optional[List[float]] = None  # vector(768), optional for response
     created_at: date  # date type, NOT NULL
-
-   

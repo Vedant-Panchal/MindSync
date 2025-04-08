@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
+
 # ----------------------
 # Journal Schemas (CRUD)
 # ----------------------
@@ -11,12 +12,15 @@ class JournalBase(BaseModel):
     content: str
     is_draft: bool = False
 
+
 class JournalCreate(JournalBase):
     pass  # Mood will be auto-detected by AI
+
 
 class JournalUpdate(BaseModel):
     content: Optional[str] = None
     is_draft: Optional[bool] = None
+
 
 class JournalResponse(JournalBase):
     id: UUID

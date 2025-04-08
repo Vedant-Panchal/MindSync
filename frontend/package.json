@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  },
   "dependencies": {
     "@dicebear/collection": "^9.2.2",
     "@dicebear/core": "^9.2.2",
@@ -88,6 +91,8 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "eslint": "^9.17.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
@@ -95,6 +100,7 @@
     "lint-staged": "^15.5.0",
     "postcss": "^8.5.1",
     "prettier": "3.5.3",
+    "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.0.3",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",

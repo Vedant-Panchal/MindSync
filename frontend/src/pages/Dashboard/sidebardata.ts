@@ -20,31 +20,25 @@ export const getSidebarData = (user: any) => {
         user: {
             name: user?.username || "Guest",
             email: user?.email || "guest@example.com",
-            avatar: user?.avatar || "Test User",
-        },
+            avatar: user?.avatar || "Test User",},
         navMain: [
-            {
-                title: "Dashboard",
+            {                title: "Dashboard",
                 url: dashboardRoute,
                 icon: IconDashboard,
             },
-            {
-                title: "Journals",
+            {                title: "Journals",
                 url: journalRoute,
                 icon: IconListDetails,
             },
-            {
-                title: "Insights",
+            {                title: "Insights",
                 url: insightsRoute,
                 icon: IconChartBar,
             },
-            {
-                title: "Moods",
+            {                title: "Moods",
                 url: moodsRoute,
                 icon: IconFolder,
             },
-            {
-                title: "Calendar",
+            {                title: "Calendar",
                 url: calendarRoute,
                 icon: IconUsers,
             },

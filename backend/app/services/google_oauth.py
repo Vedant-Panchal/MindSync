@@ -2,7 +2,7 @@ from authlib.integrations.starlette_client import OAuth
 from app.core.config import GOOGLE_CLIENT_ID, GOOGLE_SECRET_KEY, GOOGLE_URI, JWT_SECRET
 
 GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs"
-GOOGLE_ISSUER = "https://accounts.google.com"   
+GOOGLE_ISSUER = "https://accounts.google.com"
 
 oauth = OAuth()
 oauth.register(
@@ -20,6 +20,6 @@ oauth.register(
     client_kwargs={
         "scope": "openid email profile",
         "access_type": "offline",
-        "prompt": "consent"
-    }
+        "prompt": "consent",
+    },
 )

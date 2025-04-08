@@ -8,6 +8,7 @@ from app.db.schemas.user import CreateOtpType
 from app.core.exceptions import APIException
 import json
 
+
 class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
@@ -23,10 +24,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/redoc",
             "/openapi.json",
             "/auth/v1/google/login",
-            "/auth/v1/google/callback"
+            "/auth/v1/google/callback",
         }  # Public routes
-
-
 
     # print("IN Security")
     async def dispatch(self, request: Request, call_next):
@@ -36,7 +35,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 return await call_next(request)
             if request.url.path in self.excluded_paths:
                 return await call_next(request)
-            
+
             access_token = request.cookies.get("access_token")
             refresh_token = request.cookies.get("refresh_token")
 
@@ -44,15 +43,19 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 logger.error("Access token not found")
                 if not refresh_token:
                     logger.error("Refresh token not found")
-                    raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                       detail="Unauthorized",
-                                       message="Login Required",
-                                       hint="Please login to access this resource")
+                    raise APIException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Unauthorized",
+                        message="Login Required",
+                        hint="Please login to access this resource",
+                    )
                 try:
                     # Decode refresh token & generate new access token
                     decoded_token = decode_token(refresh_token)
                     existing_user = CreateOtpType(**decoded_token)
-                    new_access_token = create_token(existing_user, ACCESS_TOKEN_EXPIRES_MINS)
+                    new_access_token = create_token(
+                        existing_user, ACCESS_TOKEN_EXPIRES_MINS
+                    )
 
                     # Store user in request state
                     request.state.user = decode_token(new_access_token)
@@ -64,33 +67,39 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,
                         httponly=True,
                         secure=(ENVIRONMENT == "production"),
-                        samesite="Lax"
+                        samesite="Lax",
                     )
                     return response
                 except Exception as e:
-                    raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                       detail="Invalid refresh token",
-                                       message="Unauthorized",
-                                       hint="Please login to access this resource")
+                    raise APIException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid refresh token",
+                        message="Unauthorized",
+                        hint="Please login to access this resource",
+                    )
             else:
                 try:
                     request.state.user = decode_token(access_token)
                     return await call_next(request)
                 except JWTError:
-                    raise APIException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                       detail="Invalid token",
-                                       message="The provided access token is invalid or expired",
-                                       hint="Please login again to obtain a new token")
+                    raise APIException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Invalid token",
+                        message="The provided access token is invalid or expired",
+                        hint="Please login again to obtain a new token",
+                    )
         except APIException as e:
             response = Response(
-                content=json.dumps({
-                    "status_code": e.status_code,
-                    "detail": e.detail,
-                    "message": e.message,
-                    "hint": e.hint
-                }),
+                content=json.dumps(
+                    {
+                        "status_code": e.status_code,
+                        "detail": e.detail,
+                        "message": e.message,
+                        "hint": e.hint,
+                    }
+                ),
                 status_code=e.status_code,
-                media_type="application/json"
+                media_type="application/json",
             )
             # Ensure CORS headers are included even in error responses
             response.headers["Access-Control-Allow-Origin"] = "http://localhost:5173"
