@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cd frontend
+npx lint-staged || exit 1
+
+cd ../backend
+poetry run black . || exit 1
+
+cd ..

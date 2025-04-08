@@ -57,4 +57,6 @@ async def testing():
         variable_test = submit_draft()
         return {"message": variable_test}
     except Exception as e:
-        raise APIException(status_code=400, detail=str(e), message=f"Error occurred: {str(e)}")
+        raise APIException(
+            status_code=400, detail=str(e), message=f"Error occurred: {str(e)}"
+        )
