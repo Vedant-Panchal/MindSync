@@ -9,9 +9,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -25,7 +22,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={props.data.navMain} />
-        <NavDocuments items={props.data.documents} />
+        {/* <NavDocuments items={props.data.documents} /> */}
         <NavSecondary items={props.data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

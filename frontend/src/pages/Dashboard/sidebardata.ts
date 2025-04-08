@@ -1,17 +1,15 @@
-import { User } from "@/stores/authStore";
+import { Route as dashboardRoute } from "@/routes/(app)/app.dashboard";
+import { Route as journalRoute } from "@/routes/(app)/app.journals";
+import { Route as insightsRoute } from "@/routes/(app)/app.insights";
+import { Route as moodsRoute } from "@/routes/(app)/app.moods";
+import { Route as calendarRoute } from "@/routes/(app)/app.calendar";
+import { Route as settingsRoute } from "@/routes/(app)/app.settings";
+
 import {
-    IconCamera,
     IconChartBar,
     IconDashboard,
-    IconDatabase,
-    IconFileAi,
-    IconFileDescription,
-    IconFileWord,
     IconFolder,
-    IconHelp,
     IconListDetails,
-    IconReport,
-    IconSearch,
     IconSettings,
     IconUsers,
 } from "@tabler/icons-react";
@@ -27,111 +25,53 @@ export const getSidebarData = (user: any) => {
         navMain: [
             {
                 title: "Dashboard",
-                url: "#",
+                url: dashboardRoute,
                 icon: IconDashboard,
             },
             {
-                title: "Lifecycle",
-                url: "#",
+                title: "Journals",
+                url: journalRoute,
                 icon: IconListDetails,
             },
             {
-                title: "Analytics",
-                url: "#",
+                title: "Insights",
+                url: insightsRoute,
                 icon: IconChartBar,
             },
             {
-                title: "Projects",
-                url: "#",
+                title: "Moods",
+                url: moodsRoute,
                 icon: IconFolder,
             },
             {
-                title: "Team",
-                url: "#",
+                title: "Calendar",
+                url: calendarRoute,
                 icon: IconUsers,
-            },
-        ],
-        navClouds: [
-            {
-                title: "Capture",
-                icon: IconCamera,
-                isActive: true,
-                url: "#",
-                items: [
-                    {
-                        title: "Active Proposals",
-                        url: "#",
-                    },
-                    {
-                        title: "Archived",
-                        url: "#",
-                    },
-                ],
-            },
-            {
-                title: "Proposal",
-                icon: IconFileDescription,
-                url: "#",
-                items: [
-                    {
-                        title: "Active Proposals",
-                        url: "#",
-                    },
-                    {
-                        title: "Archived",
-                        url: "#",
-                    },
-                ],
-            },
-            {
-                title: "Prompts",
-                icon: IconFileAi,
-                url: "#",
-                items: [
-                    {
-                        title: "Active Proposals",
-                        url: "#",
-                    },
-                    {
-                        title: "Archived",
-                        url: "#",
-                    },
-                ],
             },
         ],
         navSecondary: [
             {
                 title: "Settings",
-                url: "#",
+                url: settingsRoute,
                 icon: IconSettings,
             },
-            {
-                title: "Get Help",
-                url: "#",
-                icon: IconHelp,
-            },
-            {
-                title: "Search",
-                url: "#",
-                icon: IconSearch,
-            },
         ],
-        documents: [
-            {
-                name: "Data Library",
-                url: "#",
-                icon: IconDatabase,
-            },
-            {
-                name: "Reports",
-                url: "#",
-                icon: IconReport,
-            },
-            {
-                name: "Word Assistant",
-                url: "#",
-                icon: IconFileWord,
-            },
-        ],
+        // documents: [
+        //     {
+        //         name: "Data Library",
+        //         url: "#",
+        //         icon: IconDatabase,
+        //     },
+        //     {
+        //         name: "Reports",
+        //         url: "#",
+        //         icon: IconReport,
+        //     },
+        //     {
+        //         name: "Word Assistant",
+        //         url: "#",
+        //         icon: IconFileWord,
+        //     },
+        // ],
     };
 };
