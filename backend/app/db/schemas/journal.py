@@ -3,15 +3,19 @@ from uuid import UUID
 from datetime import datetime, date
 from typing import Optional, Dict, List
 
+
 # Draft schema (for Redis storage, YYYY-MM-DD date)
 class DraftRequest(BaseModel):
-    content : str
-    tags : Dict
+    content: str
+    tags: Dict
+
+
 class DraftCreate(BaseModel):
     content: str
     user_id: UUID
     date: str
-    tags : Dict
+    tags: Dict
+
 
 # Journal schema
 class JournalCreate(BaseModel):
@@ -27,8 +31,9 @@ class Journal(BaseModel):
     date: date  # date type, NOT NULL
     moods: Optional[Dict] = None  # jsonb, optional
     tags: Dict
-    embedding: Optional[List[float]] = None,  # vector(768), optional for response
+    embedding: Optional[List[float]] = (None,)  # vector(768), optional for response
     created_at: datetime
+
 
 # Journal Section (Chunk) schema
 class JournalSectionCreate(BaseModel):
@@ -36,6 +41,7 @@ class JournalSectionCreate(BaseModel):
     journal_id: UUID
     section_number: int  # NOT NULL
     moods: Dict  # jsonb, NOT NULL
+
 
 class JournalSection(BaseModel):
     id: UUID  # Primary Key, NOT NULL
@@ -46,6 +52,6 @@ class JournalSection(BaseModel):
     embedding: List[float]  # vector(768), optional for response
     created_at: date  # date type, NOT NULL
 
+
 class ChatbotType(BaseModel):
-    query : str
- 
+    query: str

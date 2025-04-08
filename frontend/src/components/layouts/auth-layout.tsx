@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Head } from "@/components/seo";
-
 type LayoutProps = {
   children: React.ReactNode;
   title: string;

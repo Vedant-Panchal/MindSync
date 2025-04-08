@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  getUser,
   RegisterInput,
   registerInputSchema,
   Step1,
@@ -16,7 +17,7 @@ import {
 } from "@/lib/auth";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
-import { Check } from "lucide-react";
+import { Check, MoveRight } from "lucide-react";
 import {
   InputOTP,
   InputOTPGroup,
@@ -26,22 +27,17 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import API_PATHS from "@/config/api-paths";
 import { useStepStore } from "@/stores/useStepStore";
-
+import { useAuthStore } from "@/stores/authStore";
+import MindSyncLogo from "@/assets/logo.svg?react";
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const search = useSearch({ strict: false });
-  const stepFromQuery = Number(search.step ?? "1");
   const { currentStep, setCurrentStep } = useStepStore();
-  useEffect(() => {
-    if (stepFromQuery !== currentStep) {
-      setCurrentStep(stepFromQuery);
-    }
-  }, [stepFromQuery]);
+  const navigate = useNavigate();
+
   const goToStep = (step: number) => {
     setCurrentStep(step);
-    navigate({ search: { step } });
   };
 
   const [margins, setMargins] = useState({
@@ -49,11 +45,8 @@ export function SignUpForm({
     marginRight: 0,
   });
   const handleGoogleLogin = async () => {
-    window.location.href = `${import.meta.env.API_URL}/${
-      API_PATHS.AUTH.GOOGLE_LOGIN
-    }`;
+    window.location.href = `http://localhost:8000${API_PATHS.AUTH.GOOGLE_LOGIN}`;
   };
-  const navigate = useNavigate();
   const stepRef = useRef<(HTMLDivElement | null)[]>([]);
   useEffect(() => {
     setMargins({
@@ -73,14 +66,6 @@ export function SignUpForm({
       await api.post(API_PATHS.AUTH.VERIFY_OTP, data);
     },
   });
-  useEffect(() => {
-    if (currentStep === 3) {
-      const timer = setTimeout(() => {
-        navigate({ to: "/app/dashboard" });
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentStep]);
 
   const {
     control,
@@ -92,10 +77,18 @@ export function SignUpForm({
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerInputSchema),
     mode: "onTouched",
+    shouldUnregister: false,
+    defaultValues: {
+      firstname: "",
+      lastname: "",
+      email: "",
+      password: "",
+      otp: "",
+    },
   });
 
   const handleNext = async (e?: React.FormEvent) => {
-    e?.preventDefault(); // Prevent form submission and page reload
+    e?.preventDefault();
 
     if (currentStep === 1) {
       const isValid = await trigger([
@@ -112,12 +105,13 @@ export function SignUpForm({
         { email },
         {
           onSuccess: () => {
-            setCurrentStep(2);
+            goToStep(2);
           },
           onError: (err: any) => {
-            toast.error(err?.response?.data?.message || "Failed to send OTP");
+            console.log(err);
+            toast.error(err?.message || "Failed to send OTP");
           },
-        }
+        },
       );
     } else if (currentStep === 2) {
       const isValid = await trigger(["otp"]);
@@ -138,15 +132,19 @@ export function SignUpForm({
       };
       console.log(data);
       verifyOtp(data, {
-        onSuccess: () => {
-          setCurrentStep(3);
+        onSuccess: async () => {
+          goToStep(3);
           toast.success("Registered successfully!");
+          try {
+            const user = await getUser();
+            useAuthStore.getState().setUser(user);
+          } catch (error) {
+            console.error("Failed to fetch user data:", error);
+          }
         },
         onError: (err: any) => {
           console.log(err);
-          toast.error(
-            err?.response?.data?.message || "OTP verification failed"
-          );
+          toast.error(err?.message || "OTP verification failed");
         },
       });
     }
@@ -154,20 +152,39 @@ export function SignUpForm({
 
   const handleBack = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      goToStep(currentStep - 1);
     }
   };
   const calculateProgressWidth = () => {
     return ((currentStep - 1) / 2) * 100;
   };
   return (
-    <div className={cn("flex flex-col gap-2 ", className)} {...props}>
+    <div className={cn("flex flex-col gap-2", className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="grid p-0">
-          <form className="p-6 md:p-8" onSubmit={(e) => e.preventDefault()}>
-            <div className="flex flex-col gap-4 relative">
+          <form
+            className="p-6 md:px-8 md:py-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleNext();
+            }}
+            onKeyDown={(e) => {
+              if (
+                e.key === "Enter" &&
+                (currentStep === 1 || currentStep === 2)
+              ) {
+                e.preventDefault();
+                handleNext();
+              }
+            }}
+          >
+            <div className="mb-2 flex w-full items-center justify-center space-x-3">
+              <MindSyncLogo className="size-5 fill-slate-900" />
+              <div className="text-xl font-bold text-slate-900">MindSync</div>
+            </div>
+            <div className="relative mt-3 flex flex-col gap-4">
               {/* Step Indicator */}
-              <div className="mb-8 ">
+              <div>
                 <div className="relative flex items-center justify-between">
                   {[1, 2, 3].map((step) => (
                     <div
@@ -180,8 +197,8 @@ export function SignUpForm({
                           step < currentStep
                             ? "border-blue-500 bg-blue-500 text-white"
                             : step === currentStep
-                            ? "border-blue-500 bg-white text-blue-500"
-                            : "border-gray-300 bg-white text-gray-300"
+                              ? "border-blue-500 bg-white text-blue-500"
+                              : "border-gray-300 bg-white text-gray-300"
                         }`}
                       >
                         {step < currentStep ? (
@@ -195,22 +212,22 @@ export function SignUpForm({
                           step < currentStep
                             ? "text-blue-500"
                             : step === currentStep
-                            ? "text-blue-500"
-                            : "text-gray-400"
+                              ? "text-blue-500"
+                              : "text-gray-400"
                         }`}
                       >
                         {step === 1
                           ? "Details"
                           : step === 2
-                          ? "Verify"
-                          : "Complete"}
+                            ? "Verify"
+                            : "Complete"}
                       </span>
                     </div>
                   ))}
                 </div>
                 {/* Connecting Lines */}
                 <div
-                  className="absolute left-0 right-0 top-5 h-0.5 -translate-y-1/2 bg-gray-200"
+                  className="absolute top-5 right-0 left-0 h-0.5 -translate-y-1/2 bg-gray-200"
                   style={{
                     marginLeft: margins.marginLeft,
                     marginRight: margins.marginRight,
@@ -227,20 +244,20 @@ export function SignUpForm({
               </div>
 
               {/* Form Title */}
-              <div className="mb-6 text-center">
-                <h2 className="text-2xl font-bold text-foreground">
+              <div className="mb-2 text-center">
+                <h2 className="text-foreground text-left text-2xl font-bold">
                   {currentStep === 1
                     ? "Sign Up"
                     : currentStep === 2
-                    ? "Verify OTP"
-                    : ""}
+                      ? "Verify OTP"
+                      : ""}
                 </h2>
-                <p className="mt-1 text-sm text-foreground/70">
+                <p className="text-foreground/70 mt-1 text-left text-sm">
                   {currentStep === 1
                     ? "Enter your details below to create an account"
                     : currentStep === 2
-                    ? "Enter the 6-digit code sent to your email"
-                    : ""}
+                      ? "Enter the 6-digit code sent to your email"
+                      : ""}
                 </p>
               </div>
               {/* Step-1  */}
@@ -259,7 +276,7 @@ export function SignUpForm({
                         {...register("firstname")}
                       />
                       {errors.firstname && (
-                        <p className="text-red-500 text-xs mt-1">
+                        <p className="mt-1 text-xs text-red-500">
                           {errors.firstname.message}
                         </p>
                       )}
@@ -276,7 +293,7 @@ export function SignUpForm({
                         {...register("lastname")}
                       />
                       {errors.lastname && (
-                        <p className="text-red-500 text-xs mt-1">
+                        <p className="mt-1 text-xs text-red-500">
                           {errors.lastname.message}
                         </p>
                       )}
@@ -293,7 +310,7 @@ export function SignUpForm({
                       {...register("email")}
                     />
                     {errors.email && (
-                      <p className="text-red-500 text-xs mt-1">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.email.message}
                       </p>
                     )}
@@ -347,13 +364,13 @@ export function SignUpForm({
                           autoFocus
                           value={watch("otp")}
                         >
-                          <InputOTPGroup className="w-full h-10">
-                            <InputOTPSlot className="w-full h-full" index={0} />
-                            <InputOTPSlot className="w-full h-full" index={1} />
-                            <InputOTPSlot className="w-full h-full" index={2} />
-                            <InputOTPSlot className="w-full h-full" index={3} />
-                            <InputOTPSlot className="w-full h-full" index={4} />
-                            <InputOTPSlot className="w-full h-full" index={5} />
+                          <InputOTPGroup className="h-10 w-full">
+                            <InputOTPSlot className="h-full w-full" index={0} />
+                            <InputOTPSlot className="h-full w-full" index={1} />
+                            <InputOTPSlot className="h-full w-full" index={2} />
+                            <InputOTPSlot className="h-full w-full" index={3} />
+                            <InputOTPSlot className="h-full w-full" index={4} />
+                            <InputOTPSlot className="h-full w-full" index={5} />
                           </InputOTPGroup>
                         </InputOTP>
                       )}
@@ -391,9 +408,21 @@ export function SignUpForm({
                   <div className="text-center text-sm">
                     Didn't receive the code?{" "}
                     <Button
-                      className="text-blue-500 hover:underline bg-transparent hover:bg-transparent shadow-none p-0"
+                      className="bg-transparent p-0 text-blue-500 shadow-none hover:bg-transparent hover:underline"
                       type="button"
-                      onClick={() => sendOtp({ email: watch("email") })}
+                      onClick={() =>
+                        sendOtp(
+                          { email: watch("email") },
+                          {
+                            onSuccess: () => {
+                              toast.success("OTP resent successfully!");
+                            },
+                            onError: (err: any) => {
+                              toast.error("Failed to resend OTP");
+                            },
+                          },
+                        )
+                      }
                     >
                       Resend
                     </Button>
@@ -420,21 +449,30 @@ export function SignUpForm({
                     Your account has been created successfully. You can now
                     login to your account.
                   </p>
+                  <Button
+                    className="group w-full bg-blue-500"
+                    onClick={() => {
+                      navigate({ to: "/app/dashboard" });
+                    }}
+                  >
+                    Dashboard
+                    <MoveRight className="ml-3 transition-transform group-hover:translate-x-1" />
+                  </Button>
                 </div>
               )}
               {currentStep === 1 && (
                 <>
-                  <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                    <span className="relative z-10 bg-background px-2 text-muted-foreground">
+                  <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+                    <span className="bg-background text-muted-foreground relative z-10 px-2">
                       Or continue with
                     </span>
                   </div>
                   <div className="flex">
                     <Button
                       variant="outline"
-                      className="w-full"
-                      type="button"
+                      className="w-full cursor-pointer"
                       onClick={handleGoogleLogin}
+                      type="button"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

@@ -13,7 +13,8 @@ def store_otp(email: str, otp: str):
     except Exception as e:
         logging.error(f"❌ Error storing OTP in Redis for {email}: {str(e)}")
 
-def store_draft(draft_data: dict[str,any], redis_key: str):
+
+def store_draft(draft_data: dict[str, any], redis_key: str):
     try:
         # Serialize Pydantic model to JSON string
         draft_json = json.dumps(draft_data)
@@ -26,7 +27,7 @@ def store_draft(draft_data: dict[str,any], redis_key: str):
         raise APIException(
             status_code=400,
             detail=f"Error storing draft in Redis: {str(e)}",
-            message="Failed to store draft"
+            message="Failed to store draft",
         )
 
 
@@ -36,5 +37,5 @@ def verify_otp(email: str, entered_otp: str):
         raise ValueError("Your OTP has expired")
     if stored_otp != entered_otp:
         raise ValueError("Your OTP is incorrect")
-    redis_client.delete(email) 
+    redis_client.delete(email)
     return True

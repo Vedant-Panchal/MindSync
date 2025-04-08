@@ -14,12 +14,37 @@ genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 GO_EMOTION_LABELS = [
-    "admiration", "amusement", "annoyance", "approval", "caring", "confusion", "curiosity",
-    "desire", "disappointment", "disapproval", "disgust", "embarrassment", "excitement",
-    "fear", "gratitude", "grief", "joy", "love", "nervousness", "optimism", "pride",
-    "realization", "relief", "remorse", "sadness", "surprise", "neutral"
+    "admiration",
+    "amusement",
+    "annoyance",
+    "approval",
+    "caring",
+    "confusion",
+    "curiosity",
+    "desire",
+    "disappointment",
+    "disapproval",
+    "disgust",
+    "embarrassment",
+    "excitement",
+    "fear",
+    "gratitude",
+    "grief",
+    "joy",
+    "love",
+    "nervousness",
+    "optimism",
+    "pride",
+    "realization",
+    "relief",
+    "remorse",
+    "sadness",
+    "surprise",
+    "neutral",
 ]
-today = datetime.today().strftime('%Y-%m-%d')
+today = datetime.today().strftime("%Y-%m-%d")
+
+
 def query_parser(user_query: str):
     prompt = f"""
 You are a helpful assistant for an AI journaling app.
@@ -41,7 +66,9 @@ Query: "{user_query}"
     response = model.generate_content(prompt)
     raw_text = response.text.strip()
 
-    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
+    cleaned = re.sub(
+        r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE
+    )
     print(f"Cleaned is : {cleaned}")
 
     try:
@@ -58,7 +85,6 @@ Query: "{user_query}"
     normalized_dates = normalize_date_range(parsed)
     # print(normalized_dates)
     return parsed
-
 
 
 def get_journals_by_date(user_id, start_date=None, end_date=None):
@@ -85,37 +111,30 @@ def get_journals_by_date(user_id, start_date=None, end_date=None):
             raise APIException(
                 status_code=404,
                 detail="No journals found in given date range",
-                message="No Journal Found"
+                message="No Journal Found",
             )
 
         return data
 
     except Exception as e:
         raise APIException(
-            status_code=500,
-            detail=str(e),
-            message="Error fetching journals"
+            status_code=500, detail=str(e), message="Error fetching journals"
         )
 
 
-def filter_by_embeddings(query:str,data:list):
+def filter_by_embeddings(query: str, data: list):
     try:
         if not data:
-             raise APIException(
+            raise APIException(
                 status_code=404,
                 detail="No journals found in given date range",
-                message="No Journal Found"
+                message="No Journal Found",
             )
-        
+
     except Exception as e:
         raise APIException(
-            status_code=500,
-            detail=str(e),
-            message="Error fetching journals"
+            status_code=500, detail=str(e), message="Error fetching journals"
         )
-
-
-
 
 
 def normalize_date_range(parsed: dict) -> dict:
@@ -130,8 +149,8 @@ def normalize_date_range(parsed: dict) -> dict:
                 settings={
                     "PREFER_DATES_FROM": "past",
                     "RELATIVE_BASE": datetime.now(),
-                    "RETURN_AS_TIMEZONE_AWARE": False
-                }
+                    "RETURN_AS_TIMEZONE_AWARE": False,
+                },
             )
             if parsed_date:
                 parsed["date_range"][key] = parsed_date.date().isoformat()

@@ -2,7 +2,99 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
 
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes rotate-circle {
+  0% {
+    transform: rotate(-45deg);
+  }
+  5% {
+    transform: rotate(-45deg);
+  }
+  12% {
+    transform: rotate(-405deg);
+  }
+  100% {
+    transform: rotate(-405deg);
+  }
+}
+
+@keyframes icon-line-tip {
+  0% {
+    width: 0;
+    left: 1px;
+    top: 19px;
+  }
+  54% {
+    width: 0;
+    left: 1px;
+    top: 19px;
+  }
+  70% {
+    width: 50px;
+    left: -8px;
+    top: 37px;
+  }
+  84% {
+    width: 17px;
+    left: 21px;
+    top: 48px;
+  }
+  100% {
+    width: 25px;
+    left: 14px;
+    top: 45px;
+  }
+}
+
+@keyframes icon-line-long {
+  0% {
+    width: 0;
+    right: 46px;
+    top: 54px;
+  }
+  65% {
+    width: 0;
+    right: 46px;
+    top: 54px;
+  }
+  84% {
+    width: 55px;
+    right: 0px;
+    top: 35px;
+  }
+  100% {
+    width: 47px;
+    right: 8px;
+    top: 38px;
+  }
+}
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
@@ -42,15 +134,15 @@
   --font-mono: JetBrains Mono, monospace;
   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-sm:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 2px 4px -1px hsl(0 0% 0% / 0.1);
-  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 4px 6px -1px hsl(0 0% 0% / 0.1);
-  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 }
 
@@ -93,15 +185,15 @@
   --radius: 0.675rem;
   --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-sm:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
   --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 2px 4px -1px hsl(0 0% 0% / 0.1);
-  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 4px 6px -1px hsl(0 0% 0% / 0.1);
-  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1),
-    0 8px 10px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+  --shadow-lg:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+  --shadow-xl:
+    0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 }
 
@@ -156,106 +248,13 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
-
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
-  @keyframes caret-blink {
-    0%,
-    70%,
-    100% {
-      opacity: 1;
-    }
-    20%,
-    50% {
-      opacity: 0;
-    }
-  }
-  @keyframes rotate-circle {
-    0% {
-      transform: rotate(-45deg);
-    }
-    5% {
-      transform: rotate(-45deg);
-    }
-    12% {
-      transform: rotate(-405deg);
-    }
-    100% {
-      transform: rotate(-405deg);
-    }
-  }
-
-  @keyframes icon-line-tip {
-    0% {
-      width: 0;
-      left: 1px;
-      top: 19px;
-    }
-    54% {
-      width: 0;
-      left: 1px;
-      top: 19px;
-    }
-    70% {
-      width: 50px;
-      left: -8px;
-      top: 37px;
-    }
-    84% {
-      width: 17px;
-      left: 21px;
-      top: 48px;
-    }
-    100% {
-      width: 25px;
-      left: 14px;
-      top: 45px;
-    }
-  }
-
-  @keyframes icon-line-long {
-    0% {
-      width: 0;
-      right: 46px;
-      top: 54px;
-    }
-    65% {
-      width: 0;
-      right: 46px;
-      top: 54px;
-    }
-    84% {
-      width: 55px;
-      right: 0px;
-      top: 35px;
-    }
-    100% {
-      width: 47px;
-      right: 8px;
-      top: 38px;
-    }
-  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
     /* Success Animation Styles */
-    .success-annimation {
+    .success-animation {
       margin: 0 auto;
     }
 
@@ -288,7 +287,7 @@
       width: 60px;
       transform-origin: 0 50%;
       border-radius: 0 100px 100px 0;
-      animation: rotate-circle 20s ease-in;
+      animation: rotate-circle 5s ease-in;
     }
 
     .check-icon::before,
@@ -314,7 +313,7 @@
       left: 14px;
       width: 25px;
       transform: rotate(45deg);
-      animation: icon-line-tip 20s;
+      animation: icon-line-tip 1s;
     }
 
     .check-icon .icon-line.line-long {
@@ -322,7 +321,7 @@
       right: 8px;
       width: 47px;
       transform: rotate(-45deg);
-      animation: icon-line-long 20s;
+      animation: icon-line-long 1s;
     }
 
     .check-icon .icon-circle {

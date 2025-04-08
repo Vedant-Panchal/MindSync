@@ -1,8 +1,5 @@
 import * as React from "react";
-import {
-  IconInnerShadowTop,
-} from "@tabler/icons-react";
-
+import MindSyncLogo from "@/assets/logo.svg?react";
 import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -12,32 +9,20 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex h-max w-max items-end justify-start space-x-5">
+          <MindSyncLogo className="fill-sidebar-foreground hover:fill-primary size-8 transition-colors duration-300" />
+          <span className="inline-block text-2xl font-extrabold">MindSync</span>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={props.data.navMain} />
-        <NavDocuments items={props.data.documents} />
+        {/* <NavDocuments items={props.data.documents} /> */}
         <NavSecondary items={props.data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
