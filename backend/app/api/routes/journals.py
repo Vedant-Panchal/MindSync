@@ -9,7 +9,7 @@ from fastapi.encoders import jsonable_encoder
 
 from app.utils.otp_utils import store_draft, store_otp
 from app.utils.utils import submit_draft
-from app.utils.chatbot_utils import get_journals_by_date, query_parser
+from app.utils.chatbot_utils import filter_by_embeddings, filter_by_moods, filter_by_tags, get_journals_by_date, query_function, query_parser
 
 router = APIRouter()
 
@@ -31,7 +31,13 @@ async def save_drafts(request: Request, draft: DraftRequest):
             detail="There is Nothing Written To Save",
             hint="Write Something",
         )
-
+    if not draft.content:
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="NO Title To save",
+            detail="There is Nothing Written In Title To Save",
+            hint="Write Something",
+        )
     try:
         today = date.today().isoformat()
         redis_key = f"Draft:{user['id']}:{today}"
@@ -40,6 +46,7 @@ async def save_drafts(request: Request, draft: DraftRequest):
             "date": today,
             "user_id": user["id"],
             "tags": draft.tags,
+            "title" : draft.title
         }
 
         print(f"Draft Data : {draft_data} And Type of Draft Data : {type(draft_data)}")
@@ -74,18 +81,37 @@ async def getQuery(request: Request, user_query: ChatbotType):
         raise APIException(status_code=400, detail="Enter A Query", message=f"No Query")
 
     result = query_parser(user_query.query)
-    start_date = result["date_range"]["start"]
-    end_date = result["date_range"]["end"]
-    print(start_date)
-    user = getattr(request.state, "user", None)
-    data_by_date = get_journals_by_date(
-        user["id"], start_date=start_date, end_date=end_date
-    )
-    if len(data_by_date) == 0:
-        print("No Journal entry")
+    # start_date = result["date_range"]["start"]
+    # end_date = result["date_range"]["end"]
+    # print(start_date)
+    user = getattr(request.state,'user',None)
 
-    for i in data_by_date:
-        # print(i['text'])
-        print(i)
+
+
+    # data_by_date = get_journals_by_date(user['id'],start_date=start_date,end_date=end_date)
+
+
+    # journal_ids = []
+    # for i in data_by_date:
+    #     journal_ids.append(i['id'])
+    # print(journal_ids)
+    # if len(data_by_date) == 0:
+    #     return journal_ids
+
+    
+    # result_mood = filter_by_moods(data_by_date,result['moods'])
+    # print(f"result of moods filter {result_mood}")
+    # result_tags = filter_by_tags(result['tags'],result_mood)
+
+
+    # journal_ids = []
+    # for i in result_tags:
+    #     journal_ids.append(i['id'])
+    # print(journal_ids)
+    # semantic_result = filter_by_embeddings(user_query.query,journal_ids=journal_ids)
+    # return result
+    # return semantic_result
+
+    result =  query_function(user['id'],user_query.query,result,)
 
     return result

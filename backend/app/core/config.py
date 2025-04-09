@@ -23,8 +23,8 @@ GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_SECRET_KEY: str = os.getenv("GOOGLE_CLIENT_SECRET")
 GOOGLE_URI: str = os.getenv("GOOGLE_REDIRECT_URI")
 ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-MODEL_VECTOR : str = os.getenv("VECTOR_MODEL")
-GEMINI_KEY : str = os.getenv('GEMINI_KEY')
+MODEL_VECTOR: str = os.getenv("VECTOR_MODEL")
+GEMINI_KEY: str = os.getenv("GEMINI_KEY")
 
 
 # # Log configuration values
@@ -42,4 +42,3 @@ GEMINI_KEY : str = os.getenv('GEMINI_KEY')
 # logger.success("Google Redirect Uri : {google_uri} 🔑", google_uri=GOOGLE_URI)
 # logger.success("Sentence To Vector : {model_vector} 🔑", model_vector=MODEL_VECTOR)
 logger.success("Gemini Key : {gemini_key} 🔑", gemini_key=GEMINI_KEY)
-

@@ -24,14 +24,6 @@ from app.db.schemas.journal import (
     JournalSectionCreate,
 )
 
-from app.db.schemas.journal import (
-    DraftCreate,
-    Journal,
-    JournalCreate,
-    JournalSectionCreate,
-)
-
-
 embedding_model = HuggingFaceEmbeddings(model_name=MODEL_VECTOR)
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
 
@@ -67,10 +59,10 @@ def generate_embedding(text: str) -> list:
     return avg_embedding
 
 
-def direct_emebedding(text: str) -> list:
+def direct_embedding(text: str) -> list:
     chunks = [text]
     embeddings = embedding_model.embed_documents(chunks)
-    print(f"embeddings are {embeddings}")
+    # print (f"embeddings are {embeddings}")
     return embeddings
 
 
@@ -85,18 +77,20 @@ def analyze_mood(text: str) -> dict:
     moods = {
         result["label"]: result["score"] for result in mood_list
     }  # Convert to dict
-    mood_list = []
 
     moods = {result["label"]: round(result["score"], 4) for result in mood_list}
 
+    print(f"Moods : {moods}")
+
     sorted_moods = sorted(moods.items(), key=lambda x: x[1], reverse=True)
+
+    print(sorted_moods)
 
     top_three_moods = sorted_moods[:3]
 
     dominant_mood = sorted_moods[0][0] if sorted_moods else "neutral"
-
     top_moods = {label: score for label, score in top_three_moods}
-
+    # print(top_moods)
     return {"dominant": dominant_mood, **top_moods}
 
 
@@ -121,23 +115,6 @@ def submit_draft():
                 chunks = text_splitter.split_text(draft.content)
                 combine_embeddings = generate_embedding(draft.content)
                 moods = analyze_mood(draft.content)
-                tags = {"deeds": "good"}
-                print(f"Moods : {moods}")
-                print(f"combined embeddings{combine_embeddings}")
-                print(f"draft Content : {draft.content}")
-                print(f"Journal Id is {journal_id}")
-                print(f"user Id is {user_id}")
-                journal_data = Journal(
-                    id=journal_id,
-                    user_id=user_id,
-                    text=draft.content,
-                    moods=moods,
-                    tags=tags,
-                    embedding=combine_embeddings,
-                    date=draft.date,
-                )
-                print(f"Data is {journal_data}")
-                return journal_data
                 section_number = 0
 
                 journal = aggregate_journal(
@@ -147,13 +124,15 @@ def submit_draft():
                     combine_embeddings,
                     draft.tags,
                     journal_id,
+                    title = draft.title,
+                    title_embedding=direct_embedding(draft.title)
                 )
                 data_json = jsonable_encoder(journal)
                 insert_journal(data_json, db)
 
                 # return data_json
                 for chunk in chunks:
-                    section, section_id, dominant_mood = process_draft_chunk(
+                    section = process_draft_chunk(
                         journal_id, chunk, section_number, user_id, today
                     )
                     section_data = section
@@ -182,54 +161,6 @@ def submit_draft():
         message="No Drafts Processed",
     )
 
-
-# async def process_drafts(redis_client, supabase_client, embedding_model, text_splitter, mood_classifier):
-#     yesterday = (datetime.now(timezone.utc).date() - timedelta(days=1)).isoformat()
-#     today = (datetime.now(timezone.utc).date())
-#     keys = await redis_client.keys(f"Draft:*:{today}")
-
-#     for key in keys:
-#         draft_data = await redis_client.get(key)
-#         if draft_data:
-#             try:
-#                 # Deserialize JSON string back to dict and create DraftCreate
-#                 draft_dict = json.loads(draft_data)
-#                 draft = DraftCreate(**draft_dict)
-#                 user_id = str(draft.user_id)
-#                 logger.info(f"Draft Data: {draft}, User ID: {user_id}")
-
-#                 # Chunk the content
-#                 chunks = text_splitter.split_text(draft.content)
-#                 section_number = 0
-
-#                 # Process each chunk and insert directly
-#                 for chunk in chunks:
-#                     section, section_id, dominant_mood = process_draft_chunk(
-#                         chunk, section_number, user_id, yesterday, embedding_model, text_splitter, mood_classifier
-#                     )
-#                     section_data = section
-#                     insert_journal_section(section_data, supabase_client)
-#                     section_number += 1
-
-#                 # Aggregate and insert journal
-#                 journal = aggregate_journal(
-#                     chunks, user_id, yesterday, embedding_model, text_splitter, mood_classifier
-#                 )
-#                 data_json = jsonable_encoder(journal)
-#                 journal_id = insert_journal(data_json, supabase_client)
-
-#                 # No need to update journal_sections here since they’re already inserted with journal_id
-#                 await redis_client.delete(key)
-#                 logger.info(f"✅ Processed draft for {yesterday} and stored in Supabase")
-
-#             except ValueError as e:
-#                 logger.error(f"❌ Error processing draft for {key}: {str(e)}")
-#                 continue  # Skip this draft but continue processing others
-#             except Exception as e:
-#                 logger.error(f"❌ Unexpected error processing draft for {key}: {str(e)}")
-#                 continue
-
-#     return keys
 
 
 def insert_journal(journal_data, db):
@@ -264,9 +195,7 @@ def process_draft_chunk(
     section_id = str(uuid4())
     chunk_moods = analyze_mood(chunk)
     dominant_mood = chunk_moods["dominant"]
-    embedding = generate_embedding(chunk, embedding_model, text_splitter)
-
-    embedding = generate_embedding(chunk)
+    embedding = direct_embedding(chunk)
 
     section_data = {
         "id": section_id,
@@ -274,15 +203,14 @@ def process_draft_chunk(
         "section_number": section_number,
         "text": chunk,
         "moods": chunk_moods,  # JSONB with all mood scores
-        "embedding": embedding,  # 384-dimensional vector
+        "embedding": embedding[0],  # 384-dimensional vector
         "created_at": date.today().isoformat(),  # date type
-        "created_at": date,  # date type
     }
-    return JournalSection(**section_data), section_id, dominant_mood
+    return JournalSection(**section_data)
 
 
 def aggregate_journal(
-    chunks: List[str], user_id: str, date: str, combine_embedding, tags, journal_id: str
+    chunks: List[str], user_id: str, date: str, combine_embedding, tags, journal_id: str,title:str,title_embedding : list[float]
 ):
     aggregated_content = " ".join(chunks)
     moods = {}  # Dictionary to store aggregated mood scores
@@ -308,16 +236,16 @@ def aggregate_journal(
     journal_data = {
         "id": journal_id,
         "user_id": user_id,
-        "text": aggregated_content,
+        "content": aggregated_content,
         "date": date,  # YYYY-MM-DD
         "moods": journal_moods,
         "tags": {},  # Optional, can expand later
-        "embedding": generate_embedding(
-            aggregated_content, embedding_model, text_splitter
-        ),  # 384 dims
+        "embedding": combine_embedding,
         "tags": tags,
         "embedding": combine_embedding,
         "created_at": datetime.now(timezone.utc),
+        "title" : title,
+        "title_embedding" : title_embedding[0]
     }
     # return JournalCreate(**journal_data)
     return Journal(**journal_data)

@@ -4,34 +4,37 @@ from datetime import datetime, date
 from typing import Optional, Dict, List
 
 
-# Draft schema (for Redis storage, YYYY-MM-DD date)
 class DraftRequest(BaseModel):
     content: str
-    tags: Dict
+    tags: list
+    title : str
+
 
 
 class DraftCreate(BaseModel):
     content: str
     user_id: UUID
     date: str
-    tags: Dict
+    tags: list
+    title : str
 
 
-# Journal schema
 class JournalCreate(BaseModel):
-    text: str  # Matches 'text' in journals table
+    text: str  
     user_id: UUID
-    date: str  # YYYY-MM-DD, will be converted to date in Journal
+    date: str 
 
 
 class Journal(BaseModel):
-    id: UUID  # Primary Key, NOT NULL
-    user_id: UUID  # NOT NULL, Foreign Key to users.id
-    text: str  # NOT NULL
-    date: date  # date type, NOT NULL
-    moods: Optional[Dict] = None  # jsonb, optional
-    tags: Dict
-    embedding: Optional[List[float]] = (None,)  # vector(768), optional for response
+    id: UUID  
+    user_id: UUID  
+    content: str 
+    date: date  
+    moods: Optional[Dict] = None  
+    tags: list
+    embedding: Optional[List[float]] = None,
+    title : str
+    title_embedding : list[float]
     created_at: datetime
 
 
