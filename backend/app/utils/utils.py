@@ -124,8 +124,8 @@ def submit_draft():
                     combine_embeddings,
                     draft.tags,
                     journal_id,
-                    title = draft.title,
-                    title_embedding=direct_embedding(draft.title)
+                    title=draft.title,
+                    title_embedding=direct_embedding(draft.title),
                 )
                 data_json = jsonable_encoder(journal)
                 insert_journal(data_json, db)
@@ -160,7 +160,6 @@ def submit_draft():
         detail="No valid draft data found",
         message="No Drafts Processed",
     )
-
 
 
 def insert_journal(journal_data, db):
@@ -210,7 +209,14 @@ def process_draft_chunk(
 
 
 def aggregate_journal(
-    chunks: List[str], user_id: str, date: str, combine_embedding, tags, journal_id: str,title:str,title_embedding : list[float]
+    chunks: List[str],
+    user_id: str,
+    date: str,
+    combine_embedding,
+    tags,
+    journal_id: str,
+    title: str,
+    title_embedding: list[float],
 ):
     aggregated_content = " ".join(chunks)
     moods = {}  # Dictionary to store aggregated mood scores
@@ -244,8 +250,8 @@ def aggregate_journal(
         "tags": tags,
         "embedding": combine_embedding,
         "created_at": datetime.now(timezone.utc),
-        "title" : title,
-        "title_embedding" : title_embedding[0]
+        "title": title,
+        "title_embedding": title_embedding[0],
     }
     # return JournalCreate(**journal_data)
     return Journal(**journal_data)

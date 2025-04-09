@@ -7,8 +7,7 @@ from typing import Optional, Dict, List
 class DraftRequest(BaseModel):
     content: str
     tags: list
-    title : str
-
+    title: str
 
 
 class DraftCreate(BaseModel):
@@ -16,25 +15,25 @@ class DraftCreate(BaseModel):
     user_id: UUID
     date: str
     tags: list
-    title : str
+    title: str
 
 
 class JournalCreate(BaseModel):
-    text: str  
+    text: str
     user_id: UUID
-    date: str 
+    date: str
 
 
 class Journal(BaseModel):
-    id: UUID  
-    user_id: UUID  
-    content: str 
-    date: date  
-    moods: Optional[Dict] = None  
+    id: UUID
+    user_id: UUID
+    content: str
+    date: date
+    moods: Optional[Dict] = None
     tags: list
-    embedding: Optional[List[float]] = None,
-    title : str
-    title_embedding : list[float]
+    embedding: Optional[List[float]] = (None,)
+    title: str
+    title_embedding: list[float]
     created_at: datetime
 
 
