@@ -29,6 +29,7 @@ export function NavMain({
             <SidebarMenuButton
               tooltip="Quick Create"
               className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+              onClick={() => navigate({ to: "/app/create" })}
             >
               <IconCirclePlusFilled />
               <span>Quick Create</span>
@@ -43,10 +44,7 @@ export function NavMain({
                 key={item.title}
                 onClick={() => navigate({ to: item.url.to })}
               >
-                <SidebarMenuButton
-                  tooltip={item.title}
-                  data-active={isActive}
-                >
+                <SidebarMenuButton tooltip={item.title} data-active={isActive}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                 </SidebarMenuButton>

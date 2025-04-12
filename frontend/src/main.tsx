@@ -13,6 +13,7 @@ import { useAuthStore, User } from "@/stores/authStore";
 import API_PATHS from "@/config/api-paths";
 import { api } from "@/lib/api-client";
 import { Spinner } from "@/components/ui/spinner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const queryClient = new QueryClient({
   defaultOptions: queryConfig,
@@ -49,18 +50,20 @@ preloadUser().then(() => {
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary FallbackComponent={MainErrorFallback}>
         <Suspense>
-          <RouterProvider
-            router={router}
-            defaultPendingComponent={() => (
-              <div className="h-screen w-screen flex items-center justify-center bg-background">
-                <Spinner />
-              </div>
-            )}
-          />
+          <TooltipProvider>
+            <RouterProvider
+              router={router}
+              defaultPendingComponent={() => (
+                <div className="bg-background flex h-full w-full items-center justify-center">
+                  <Spinner />
+                </div>
+              )}
+            />
+          </TooltipProvider>
         </Suspense>
         {import.meta.env.DEV && <ReactQueryDevtools />}
         <Toaster position="top-center" />
       </ErrorBoundary>
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 });

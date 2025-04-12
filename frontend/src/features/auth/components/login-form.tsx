@@ -37,7 +37,6 @@ export function LoginForm({
     window.location.href = `http://localhost:8000${API_PATHS.AUTH.GOOGLE_LOGIN}`;
   };
   const onSubmit = async (data: LoginInput) => {
-    console.log(data);
     login(data);
   };
 
@@ -49,11 +48,11 @@ export function LoginForm({
             className="p-6 md:px-8 md:py-4"
             onSubmit={handleSubmit(onSubmit)}
           >
-            <div className="flex w-full items-center justify-center -mt-4 space-x-3">
+            <div className="-mt-4 flex w-full items-center justify-center space-x-3">
               <MindSyncLogo className="size-5 fill-slate-900" />
               <div className="text-xl font-bold text-slate-900">MindSync</div>
             </div>
-            <div className="flex flex-col gap-6 mt-5">
+            <div className="mt-5 flex flex-col gap-6">
               <div className="flex flex-col items-start justify-start gap-1">
                 <h1 className="text-xl font-bold text-gray-900 md:text-2xl dark:text-white">
                   Login
@@ -71,7 +70,7 @@ export function LoginForm({
                   {...register("email")}
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="mt-1 text-xs text-red-500">
                     {errors.email.message}
                   </p>
                 )}
@@ -93,7 +92,7 @@ export function LoginForm({
                   {...register("password")}
                 />
                 {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="mt-1 text-xs text-red-500">
                     {errors.password.message}
                   </p>
                 )}
@@ -109,8 +108,8 @@ export function LoginForm({
                   "Continue"
                 )}
               </Button>
-              <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-                <span className="relative z-10 bg-background px-2 text-muted-foreground">
+              <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
+                <span className="bg-background text-muted-foreground relative z-10 px-2">
                   Or continue with
                 </span>
               </div>
@@ -134,7 +133,7 @@ export function LoginForm({
                 Don&apos;t have an account?{" "}
                 <Link
                   to="/signup"
-                  className="underline underline-offset-4 cursor-pointer"
+                  className="cursor-pointer underline underline-offset-4"
                 >
                   Sign up
                 </Link>

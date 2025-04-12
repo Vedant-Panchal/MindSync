@@ -3,16 +3,16 @@ import { Route as journalRoute } from "@/routes/(app)/app.journals";
 import { Route as insightsRoute } from "@/routes/(app)/app.insights";
 import { Route as moodsRoute } from "@/routes/(app)/app.moods";
 import { Route as calendarRoute } from "@/routes/(app)/app.calendar";
-import { Route as settingsRoute } from "@/routes/(app)/app.settings";
+import { Route as chatRoute } from "@/routes/(app)/app.chat";
 
 import {
+  IconBulb,
+  IconCalendarWeek,
+  IconCategory,
   IconChartBar,
-  IconDashboard,
-  IconFolder,
-  IconListDetails,
-  IconSettings,
-  IconUsers,
+  IconMessageChatbot,
 } from "@tabler/icons-react";
+import { SquarePen } from "lucide-react";
 
 export const getSidebarData = (user: any) => {
   return {
@@ -22,19 +22,20 @@ export const getSidebarData = (user: any) => {
       avatar: user?.avatar || "Test User",
     },
     navMain: [
-      { title: "Dashboard", url: dashboardRoute, icon: IconDashboard },
-      { title: "Journals", url: journalRoute, icon: IconListDetails },
-      { title: "Insights", url: insightsRoute, icon: IconChartBar },
-      { title: "Moods", url: moodsRoute, icon: IconFolder },
-      { title: "Calendar", url: calendarRoute, icon: IconUsers },
+      { title: "Dashboard", url: dashboardRoute, icon: IconCategory },
+      { title: "Journals", url: journalRoute, icon: SquarePen },
+      { title: "Insights", url: insightsRoute, icon: IconBulb },
+      { title: "Moods", url: moodsRoute, icon: IconChartBar },
+      { title: "Calendar", url: calendarRoute, icon: IconCalendarWeek },
+      { title: "Chat", url: chatRoute, icon: IconMessageChatbot },
     ],
-    navSecondary: [
-      {
-        title: "Settings",
-        url: settingsRoute,
-        icon: IconSettings,
-      },
-    ],
+    // navSecondary: [
+    //   {
+    //     title: "Settings",
+    //     url: settingsRoute,
+    //     icon: IconSettings,
+    //   },
+    // ],
     // documents: [
     //     {
     //         name: "Data Library",
