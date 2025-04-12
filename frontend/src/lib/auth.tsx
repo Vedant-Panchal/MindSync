@@ -30,7 +30,7 @@ export const loginInputSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(
       /[^a-zA-Z0-9]/,
-      "Password must contain at least one special character"
+      "Password must contain at least one special character",
     ),
 });
 
@@ -51,7 +51,7 @@ export const registerInputSchema = z.object({
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(
       /[^a-zA-Z0-9]/,
-      "Password must contain at least one special character"
+      "Password must contain at least one special character",
     ),
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
@@ -71,7 +71,7 @@ export type Step1 = z.infer<typeof step1Schema>;
 export type Step2 = z.infer<typeof step2Schema>;
 
 const registerWithEmailAndPassword = async (
-  data: RegisterInput
+  data: RegisterInput,
 ): Promise<any> => {
   const response = await api.post(API_PATHS.AUTH.SIGN_UP, data);
   if (response.status === 200) {

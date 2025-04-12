@@ -4,6 +4,8 @@ import { persist } from "zustand/middleware";
 interface StepState {
   currentStep: number;
   setCurrentStep: (step: number) => void;
+  currentStep: number;
+  setCurrentStep: (step: number) => void;
 }
 
 export const useStepStore = create<StepState>()(
