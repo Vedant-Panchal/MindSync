@@ -37,7 +37,6 @@ export function LoginForm({
     window.location.href = `http://localhost:8000${API_PATHS.AUTH.GOOGLE_LOGIN}`;
   };
   const onSubmit = async (data: LoginInput) => {
-    console.log(data);
     login(data);
   };
 

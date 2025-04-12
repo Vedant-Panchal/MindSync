@@ -1,8 +1,6 @@
 import * as React from "react";
 import MindSyncLogo from "@/assets/logo.svg?react";
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -23,7 +21,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={props.data.navMain} />
         {/* <NavDocuments items={props.data.documents} /> */}
-        <NavSecondary items={props.data.navSecondary} className="mt-auto" />
+        {/* <NavSecondary items={props.data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={props.data.user} />

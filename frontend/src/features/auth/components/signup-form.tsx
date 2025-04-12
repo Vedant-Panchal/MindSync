@@ -135,6 +135,7 @@ export function SignUpForm({
         onSuccess: async () => {
           goToStep(3);
           toast.success("Registered successfully!");
+          localStorage.removeItem("current-step");
           try {
             const user = await getUser();
             useAuthStore.getState().setUser(user);
@@ -332,6 +333,11 @@ export function SignUpForm({
                       placeholder="••••••••"
                       {...register("password")}
                     />
+                    {errors.password && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.password.message}
+                      </p>
+                    )}
                   </div>
                   <Button
                     className="w-full"

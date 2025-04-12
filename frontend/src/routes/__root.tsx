@@ -18,13 +18,13 @@ function RootComponent() {
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
+      <div className="bg-background flex h-screen w-screen items-center justify-center">
         <Spinner />
       </div>
     );
   }
   return (
-    <div className="h-screen w-screen antialiased relative">
+    <div className="h-screen w-screen antialiased">
       <Outlet />
       {import.meta.env.DEV && <TanStackRouterDevtools />}
     </div>
@@ -34,7 +34,7 @@ function RootComponent() {
 function NotFoundComponent() {
   return (
     <div className="grid h-screen place-content-center bg-white px-4">
-      <div className="text-center flex flex-col items-center justify-center gap-2">
+      <div className="flex flex-col items-center justify-center gap-2 text-center">
         <NotFound />
         <h1 className="mt-6 text-2xl font-bold text-gray-900 sm:text-4xl">
           Uh-oh!
@@ -42,7 +42,7 @@ function NotFoundComponent() {
 
         <p className="text-gray-500">We can't find that page.</p>
         <Link
-          className="px-4 py-2 container w-fit rounded-md bg-slate-200"
+          className="container w-fit rounded-md bg-slate-200 px-4 py-2"
           to="/"
           replace
         >
