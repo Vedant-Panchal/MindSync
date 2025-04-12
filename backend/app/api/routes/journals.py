@@ -22,6 +22,7 @@ from app.utils.chatbot_utils import (
 
 router = APIRouter()
 
+
 @router.post("/drafts")
 async def save_drafts(request: Request, draft: DraftRequest):
     user = getattr(request.state, "user", None)
@@ -87,15 +88,13 @@ async def save_drafts(request: Request, draft: DraftRequest):
 async def save_draft():
     try:
         logger.info("Starting /test endpoint execution")
-        variable_test =  submit_draft()  
+        variable_test = submit_draft()
         # logger.debug(f"submit_draft result: {variable_test}")
         return {"message": variable_test}
     except Exception as e:
         logger.exception(f"Error in /test endpoint: {str(e)}")
         raise APIException(
-            status_code=400,
-            detail=str(e),
-            message=f"Error occurred: {str(e)}"
+            status_code=400, detail=str(e), message=f"Error occurred: {str(e)}"
         )
 
 
@@ -105,11 +104,7 @@ async def getQuery(request: Request, user_query: ChatbotType):
 
     if not user_query.query:
         logger.error("Empty query received")
-        raise APIException(
-            status_code=400,
-            detail="Enter A Query",
-            message="No Query"
-        )
+        raise APIException(status_code=400, detail="Enter A Query", message="No Query")
 
     try:
         filter_params = query_parser(user_query.query)
@@ -126,7 +121,7 @@ async def getQuery(request: Request, user_query: ChatbotType):
 
         # Load chat history
         try:
-            history = get_history(user_id=user['id'])
+            history = get_history(user_id=user["id"])
             # logger.debug(f"Loaded history: {history}")
         except Exception as e:
             logger.error(f"Failed to load history: {str(e)}")
@@ -135,15 +130,15 @@ async def getQuery(request: Request, user_query: ChatbotType):
         # Initialize llm_data
         llm_data = []
 
-        if filter_params.get('is_history', False):
+        if filter_params.get("is_history", False):
             logger.info("Processing history-only query")
             try:
                 final_result = final_response(
                     data=llm_data,
                     user_query=user_query.query,
                     history=history,
-                    user_id=user['id'],
-                    is_history=True
+                    user_id=user["id"],
+                    is_history=True,
                 )
                 # logger.debug(f"Final result for history query: {final_result}")
                 return final_result
@@ -152,7 +147,7 @@ async def getQuery(request: Request, user_query: ChatbotType):
                 raise APIException(
                     status_code=500,
                     detail=str(e),
-                    message="Error processing history-based query"
+                    message="Error processing history-based query",
                 )
 
         # Process journal query
@@ -167,20 +162,18 @@ async def getQuery(request: Request, user_query: ChatbotType):
         except Exception as e:
             logger.exception(f"Error in query_function: {str(e)}")
             raise APIException(
-                status_code=500,
-                detail=str(e),
-                message="Error fetching journal data"
+                status_code=500, detail=str(e), message="Error fetching journal data"
             )
 
-        if result.get('data') and len(result['data']) > 0:
-            for data in result['data']:
+        if result.get("data") and len(result["data"]) > 0:
+            for data in result["data"]:
                 data_object = {
-                    "content": data.get('content', ''),
-                    "title": data.get('title', ''),
-                    "date": data.get('created_at', ''),
-                    "moods": data.get('moods', []),
-                    "semantic_result": result.get('Semantic Result', []),
-                    "title_search": result.get('title_search', [])
+                    "content": data.get("content", ""),
+                    "title": data.get("title", ""),
+                    "date": data.get("created_at", ""),
+                    "moods": data.get("moods", []),
+                    "semantic_result": result.get("Semantic Result", []),
+                    "title_search": result.get("title_search", []),
                 }
                 llm_data.append(data_object)
             # logger.debug(f"Prepared llm_data: {llm_data}")
@@ -190,8 +183,8 @@ async def getQuery(request: Request, user_query: ChatbotType):
                 data=llm_data,
                 user_query=user_query.query,
                 history=history,
-                user_id=user['id'],
-                is_history=False
+                user_id=user["id"],
+                is_history=False,
             )
             # logger.debug(f"Final result for journal query: {final_result}")
             return final_result
@@ -200,14 +193,11 @@ async def getQuery(request: Request, user_query: ChatbotType):
             raise APIException(
                 status_code=500,
                 detail=str(e),
-                message="Error generating final response"
+                message="Error generating final response",
             )
 
     except Exception as e:
         logger.exception(f"Unexpected error in /chatbot: {str(e)}")
         raise APIException(
-            status_code=500,
-            detail=str(e),
-            message="An unexpected error occurred"
+            status_code=500, detail=str(e), message="An unexpected error occurred"
         )
-    

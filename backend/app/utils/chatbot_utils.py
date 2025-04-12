@@ -9,7 +9,7 @@ from app.core.config import GEMINI_KEY
 from app.core.connection import db
 from app.core.exceptions import APIException
 from app.utils.utils import direct_embedding
-from app.utils.otp_utils import  store_history
+from app.utils.otp_utils import store_history
 
 
 genai.configure(api_key=GEMINI_KEY)
@@ -497,27 +497,24 @@ def query_function(user_id: str, user_query: str, filter_parameters):
         )
 
 
-
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 
 # Configure the API
 genai.configure(api_key=GEMINI_KEY)
 
-def final_response(data: List[Dict], user_query: str, history: list[Dict],user_id,is_history) -> Dict[str, Any]:
 
+def final_response(
+    data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
+) -> Dict[str, Any]:
 
     transformed = []
     logger.debug(history)
     for entry in history:
-        transformed.append({
-            "role": "user",
-            "parts": [{"text": entry["user_query"]}]
-        })
-        transformed.append({
-            "role": "model",
-            "parts": [{"text": entry["response"]["message"]}]
-        })
+        transformed.append({"role": "user", "parts": [{"text": entry["user_query"]}]})
+        transformed.append(
+            {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
+        )
 
     if is_history:
         if not transformed:  # No history available
@@ -574,37 +571,30 @@ def final_response(data: List[Dict], user_query: str, history: list[Dict],user_i
         transformed = []
         for entry in history:
             # Add user query as a "user" role message
-            transformed.append({
-                "role": "user",
-                "parts": [{"text": entry["user_query"]}]
-            })
+            transformed.append(
+                {"role": "user", "parts": [{"text": entry["user_query"]}]}
+            )
             # Add response as a "model" role message
-            transformed.append({
-                "role": "model",
-                "parts": [{"text": entry["response"]['message']}]
-            })
+            transformed.append(
+                {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
+            )
 
         chat = model.start_chat(history=transformed)
         response = chat.send_message(prompt)
         response_text = response.text
 
         cleaned = re.sub(
-        r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.MULTILINE
-    )
+            r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.MULTILINE
+        )
         parsed = json.loads(cleaned)
-        query_object = {
-            "user_query" : user_query,
-            "response" : parsed
-        }
+        query_object = {"user_query": user_query, "response": parsed}
         history.append(query_object)
         dumped_history = json.dumps(history)
-        store_history(dumped_history,user_id)
+        store_history(dumped_history, user_id)
         return {
             "message": parsed,
         }
     except Exception as e:
         raise APIException(
-            status_code=500,
-            detail=str(e),
-            message="Error generating final response"
+            status_code=500, detail=str(e), message="Error generating final response"
         )
