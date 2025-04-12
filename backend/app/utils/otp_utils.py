@@ -16,10 +16,8 @@ def store_otp(email: str, otp: str):
 
 def store_draft(draft_data: dict[str, any], redis_key: str):
     try:
-        # Serialize Pydantic model to JSON string
         draft_json = json.dumps(draft_data)
         print(type(draft_json))
-        # Store in Redis with 24-hour expiration (ex=86400 seconds)
         redis_client.set(redis_key, draft_json, ex=86400)
         logging.info(f"✅ Draft stored successfully in Redis for {redis_key}")
     except Exception as e:
@@ -39,3 +37,35 @@ def verify_otp(email: str, entered_otp: str):
         raise ValueError("Your OTP is incorrect")
     redis_client.delete(email)
     return True
+
+def store_history(data: list, user_id: str):
+    try:
+        redis_client.set(name=user_id, value=data, ex=30*24*60*60)
+        logging.info(f"✅ History stored successfully in Redis for {user_id}")
+    except Exception as e:
+        error_msg = f"❌ Failed to store history in Redis for user ID '{user_id}': {str(e)}"
+        logging.error(error_msg)
+        raise APIException(
+            400,
+            "An error occurred while storing the user's history in Redis.",
+            detail=error_msg
+        )
+
+def get_history(user_id: str):
+    try:
+        data = redis_client.get(user_id) 
+        if not data:
+            logging.info(f"📭 No history found in Redis for user ID '{user_id}'. Returning empty list.")
+            return []
+        logging.info(f"📦 History retrieved successfully from Redis for user ID '{user_id}'.")
+        loaded_data = json.loads(data)
+        return loaded_data
+
+    except Exception as e:
+        error_msg = f"❌ Error retrieving history from Redis for user ID '{user_id}': {str(e)}"
+        logging.error(error_msg)
+        raise APIException(
+            500,
+            "An error occurred while retrieving the user's history.",
+            detail=error_msg
+        )
