@@ -3,6 +3,7 @@
 @import "./components//minimal-tiptap/styles/index.css";
 
 @custom-variant dark (&:is(.dark *));
+
 @keyframes accordion-down {
   from {
     height: 0;
@@ -257,6 +258,16 @@
     /* Success Animation Styles */
     .success-animation {
       margin: 0 auto;
+    }
+    /* styles/globals.css or wherever your base CSS lives */
+
+    .scrollbar-hide {
+      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
     }
 
     .success-checkmark {
