@@ -19,9 +19,7 @@ from app.core.exceptions import APIException
 from app.db.schemas.journal import (
     DraftCreate,
     Journal,
-    JournalCreate,
     JournalSection,
-    JournalSectionCreate,
 )
 
 embedding_model = HuggingFaceEmbeddings(model_name=MODEL_VECTOR)

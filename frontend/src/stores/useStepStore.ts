@@ -4,8 +4,6 @@ import { persist } from "zustand/middleware";
 interface StepState {
   currentStep: number;
   setCurrentStep: (step: number) => void;
-  currentStep: number;
-  setCurrentStep: (step: number) => void;
 }
 
 export const useStepStore = create<StepState>()(
@@ -15,8 +13,8 @@ export const useStepStore = create<StepState>()(
       setCurrentStep: (step) => set({ currentStep: step }),
     }),
     {
-      name: "current-step", // name of the item in localStorage
-      partialize: (state) => ({ currentStep: state.currentStep }), // persist only currentStep
+      name: "current-step",
+      partialize: (state) => ({ currentStep: state.currentStep }),
     },
   ),
 );
