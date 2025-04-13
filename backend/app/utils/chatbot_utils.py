@@ -9,6 +9,7 @@ from app.core.config import GEMINI_KEY
 from app.core.connection import db
 from app.core.exceptions import APIException
 from app.utils.utils import direct_embedding
+from app.utils.otp_utils import store_history
 
 
 genai.configure(api_key=GEMINI_KEY)
@@ -50,13 +51,13 @@ def query_parser(user_query: str):
     prompt = f"""
     You are a helpful assistant for an AI journaling app.
 
-    Your job is to parse a user’s natural language query and any accompanying recollections into structured JSON to help the app search journal entries.
-
+    Your job is to parse a user’s natural language query and any accompanying recollections into structured JSON to help the app search journal entries or determine if the query is purely conversational.
     Return ONLY JSON with these keys:
     1. "date_range": {{"start": "...", "end": "..."}} — extract any specific or relative time references like "last month", "yesterday", "April 6", etc. Use today’s date as: {today}
     2. "moods": List of relevant emotions from this list (account for negation): {GO_EMOTION_LABELS}
     3. "tags": Any related tags such as activities (e.g. study, code, work), subjects (e.g. networks), people (e.g. classmates, teacher), or contexts (e.g. class, lecture, exam). Use **present tense** for activities and ensure that any verb forms like "working" are replaced by the correct noun form like "work". Give it in **singular** form where applicable.
     4. "title" : Provide a concise one-sentence title based on the user’s query that accurately captures the core subject for effective semantic search. If the query doesn’t explicitly mention a title, return an empty string.
+    5. "is_history": Boolean — Set to true if the query does not involve fetching journal data (e.g., purely conversational queries like "What did I ask earlier?" or "tell me something from previous responses" or "Tell me a joke"), and false if it involves fetching journal data (e.g., mentions dates, moods, tags, titles, or journal-related terms like "show", "filter", "find").
     Respond with valid JSON only.
 
     Query and recall: "{user_query}"
@@ -73,7 +74,7 @@ def query_parser(user_query: str):
     try:
         parsed = json.loads(cleaned)
     except json.JSONDecodeError:
-        print("⚠️ Failed to parse JSON:\n", cleaned)
+        # print("⚠️ Failed to parse JSON:\n", cleaned)
         return {}
 
     # if parsed.get("date_range"):
@@ -130,7 +131,6 @@ def filter_by_title(title: str, journal_ids: list):
 
         # print(f"single array is ${title_embedding[0]}")
 
-        print(title)
         response = db.rpc(
             "match_journal_sections",
             {
@@ -166,7 +166,6 @@ def filter_by_embeddings(topic: str, journal_ids: list):
 
         # print(f"single array is ${topic_embedding[0]}")
 
-        print(topic)
         response = db.rpc(
             "match_journal_sections",
             {
@@ -194,12 +193,10 @@ def filter_by_moods(data, moods: list):
     try:
         if len(moods) == 0:
             return data
-        #   print(data)
         filter_data = []
         for j in moods:
             for i in data:
                 mood_list = list(i["moods"].keys())
-                print(mood_list)
                 if j in mood_list:
                     if i not in filter_data:
                         filter_data.append(i)
@@ -216,7 +213,7 @@ def filter_by_moods(data, moods: list):
         )
 
 
-def filter_by_tags(tags: list, data: list):
+def filter_by_tags(tags: list, data):
     try:
         if not tags or len(tags) == 0:
             return data
@@ -228,7 +225,6 @@ def filter_by_tags(tags: list, data: list):
                 if tag in i["tags"]:
                     if i not in filter_data:
                         filter_data.append(i)
-        print(filter_data)
         if len(filter_data) == 0:
             return data
         return filter_data
@@ -356,45 +352,38 @@ model = genai.GenerativeModel("gemini-1.5-flash-latest", tools=tools)
 
 
 def query_function(user_id: str, user_query: str, filter_parameters):
-    """
-    Filter data according to a user query using function calling, starting with date filtering, and return a natural language response.
 
-    Args:
-        user_id (str): The ID of the user querying their journals.
-        user_query (str): The natural language query from the user.
-        filter_parameters (Dict[str, Any], optional): Dictionary of pre-extracted filter parameters (e.g., {"date_range": {"start": "2025-04-07", "end": "2025-04-09"}, "moods": [], "tags": [], "title": ""}). Defaults to None.
-
-    Returns:
-        Dict[str, Any]: A dictionary containing the response message and filtered journal data.
-
-    Raises:
-        APIException: If processing fails.
-    """
     # Prepare prompt with filter_parameters and user_id
     # filter_params_str = str(filter_parameters if filter_parameters else {})
-    prompt = f"""Use filter_parameters ({filter_parameters}) and user_id ({user_id}) as arguments, and appropriate functions to fetch and filter journal data. Always start with get_journals_by_date to filter by date using the date_range.start and date_range.end, then apply other filters (filter_by_title, filter_by_embeddings, filter_by_moods, filter_by_tags) as needed based on the query and filter_parameters. Respond naturally with the results: {user_query}. The response should return only the filtered journal entries based on the parsed query."""
+    prompt = f"""
+    Use filter_parameters ({filter_parameters}) and 
+    user_id ({user_id}) as arguments, 
+    and appropriate functions to fetch and filter journal data. 
+    Always start with get_journals_by_date to filter by date using the date_range.start and date_range.end, 
+    then apply other filters (filter_by_title, filter_by_embeddings, filter_by_moods, filter_by_tags) 
+    as needed based on the query and filter_parameters. 
+    Respond naturally with the results: {user_query}. 
+    The response should return only the filtered journal entries based on the parsed query."""
 
     try:
         # Generate content with function calling
         response = model.generate_content(contents=prompt, tools=tools)
-        print(response)
-
+        logger.debug(response)
         # Extract function calls from the response
         function_calls = response.candidates[0].content.parts
         if not function_calls or not any(part.function_call for part in function_calls):
-            raise APIException(
-                status_code=400,
-                detail="No function calls detected in response",
-                message="Invalid Query Processing",
-            )
+            # raise APIException(
+            #     status_code=400,
+            #     detail="No function calls detected in response",
+            #     message="Invalid Query Processing",
+            # )
+            return []
 
-        # Initialize result data
         journals = []
         current_data = []
         semantic_result = []
         title_result = []
 
-        # Ensure get_journals_by_date is called first
         date_called = False
         for part in function_calls:
             if part.function_call:
@@ -468,7 +457,7 @@ def query_function(user_id: str, user_query: str, filter_parameters):
 
                     if function_name == "filter_by_tags":
                         tags = args.get("tags", filter_parameters.get("tags", []))
-                        current_data = filter_by_tags(current_data, tags)
+                        current_data = filter_by_tags(tags, current_data)
 
         # Generate natural language response
         if not current_data:
@@ -505,4 +494,107 @@ def query_function(user_id: str, user_query: str, filter_parameters):
             status_code=500,
             detail=str(e),
             message="Error processing user query with function calling",
+        )
+
+
+import google.generativeai as genai
+from typing import List, Dict, Any, Optional
+
+# Configure the API
+genai.configure(api_key=GEMINI_KEY)
+
+
+def final_response(
+    data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
+) -> Dict[str, Any]:
+
+    transformed = []
+    logger.debug(history)
+    for entry in history:
+        transformed.append({"role": "user", "parts": [{"text": entry["user_query"]}]})
+        transformed.append(
+            {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
+        )
+
+    if is_history:
+        if not transformed:  # No history available
+            prompt = f"""
+            This is the user query = '{user_query}'.
+            There is no conversation history available.
+            Respond in JSON format like:
+            {{
+                "title": "unknown",
+                "date": "NA",
+                "message": "I don’t have any prior conversation history to base my response on. How can I assist you?"
+            }}
+            """
+        else:
+            prompt = f"""
+            This is the user query = '{user_query}'.
+            Respond to this query using the conversation history provided.
+            Use natural language and incorporate context from the history to answer the query.
+            Respond in JSON format like:
+            {{
+                "title": "Conversation Summary",
+                "date": "{today}",
+                "message": "your natural language response here"
+            }}
+            """
+    elif not data or len(data) == 0:
+        prompt = f"""
+        This is the user query = '{user_query}'.
+        The journal data is empty.
+        Respond in JSON format like:
+        {{
+            "title": "unknown",
+            "date": "NA",
+            "message": "Cannot Understand Your Question, please provide some details"
+        }}
+        """
+    else:
+        # logger.debug(data)
+        # data_str = "\n".join([f"- Titled '{entry.get('title', 'Untitled')}' on {entry.get('date', 'unknown date')}: {entry.get('text', 'No details available')}" for entry in data])
+        prompt = f"""
+        This is the user query = '{user_query}'.
+        Respond to this query with the help of this data: {data}.
+        Use natural language and incorporate context from the conversation history if available.
+        Respond in JSON format like:
+        {{
+            "title": "title",
+            "date": 'date',
+            "message": "message"
+        }}
+        """
+
+    model = genai.GenerativeModel("gemini-1.5-flash-latest")
+    try:
+        transformed = []
+        for entry in history:
+            # Add user query as a "user" role message
+            transformed.append(
+                {"role": "user", "parts": [{"text": entry["user_query"]}]}
+            )
+            # Add response as a "model" role message
+            transformed.append(
+                {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
+            )
+
+        chat = model.start_chat(history=transformed)
+        response = chat.send_message(prompt)
+        response_text = response.text
+
+        cleaned = re.sub(
+            r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.MULTILINE
+        )
+        parsed = json.loads(cleaned)
+        query_object = {"user_query": user_query, "response": parsed}
+        history.append(query_object)
+        dumped_history = json.dumps(history)
+        store_history(dumped_history, user_id)
+        return {
+            "message": parsed,
+        }
+    except Exception as e:
+        raise APIException(
+            status_code=500, detail=str(e), message="Error generating final response"
         )

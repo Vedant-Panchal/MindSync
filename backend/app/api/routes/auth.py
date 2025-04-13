@@ -379,6 +379,79 @@ async def google_login(request: Request):
     return await oauth.google.authorize_redirect(request, GOOGLE_URI)
 
 
+# @router.get("/google/callback")
+# async def google_callback(request: Request):
+#     token: dict = await oauth.google.authorize_access_token(request)
+#     id_token = token.get("id_token")
+#     access_token = token.get("access_token")
+#     try:
+#         if not id_token or not access_token:
+#             raise APIException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 message="Missing tokens",
+#                 detail="ID token or access token is missing",
+#             )
+#         user_info = jwt.decode(
+#             id_token,
+#             requests.get(GOOGLE_JWKS_URL).json(),
+#             algorithms=["RS256"],
+#             audience=GOOGLE_CLIENT_ID,
+#             access_token=access_token,
+#         )
+#         email = user_info.get("email")
+#         name = user_info.get("name")
+#         google_id = user_info.get("sub")
+
+#         user_id = str(uuid4())
+#         existing_user = get_user_by_email(email)
+#         if existing_user:
+#             user = existing_user[0]
+#             # If the existing user was created via email/password, prevent duplicate Google login
+#             if user.get("oauth_provider") == OAuthType.local.value:
+#                 raise APIException(
+#                     status_code=status.HTTP_400_BAD_REQUEST,
+#                     message="This email is already registered with a password",
+#                     detail="Please log in using email and password",
+#                 )
+#         else:
+#             new_user = UserInDB(
+#                 id=user_id,
+#                 email=email,
+#                 username=name,
+#                 password=None,
+#                 oauth_provider=OAuthType.google.value,
+#                 oauth_id=google_id,
+#                 created_at=datetime.now(timezone.utc),
+#                 updated_at=datetime.now(timezone.utc),
+#                 is_verified=True,
+#             )
+#             db.table("users").insert(jsonable_encoder(new_user)).execute()
+#         userData = CreateOtpType(email=email, id=user_id, username=name)
+#         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
+#         refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 2)
+
+#         # Set cookies for tokens
+#         response = RedirectResponse(url="http://localhost:5173/app/dashboard")
+#         response.set_cookie(
+#             "access_token",
+#             access_token,
+#             httponly=True,
+#             secure=(ENVIRONMENT == "production"),
+#             samesite="Lax",
+#         )
+#         response.set_cookie(
+#             "refresh_token",
+#             refresh_token,
+#             httponly=True,
+#             secure=(ENVIRONMENT == "production"),
+#             samesite="Strict",
+#         )
+#         return response
+#     except APIException as e:
+#         logger.error("Error occurred during Google OAuth callback: {}", str(e))
+#         raise e
+
+
 @router.get("/google/callback")
 async def google_callback(request: Request):
     token: dict = await oauth.google.authorize_access_token(request)
@@ -408,11 +481,8 @@ async def google_callback(request: Request):
             user = existing_user[0]
             # If the existing user was created via email/password, prevent duplicate Google login
             if user.get("oauth_provider") == OAuthType.local.value:
-                raise APIException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    message="This email is already registered with a password",
-                    detail="Please log in using email and password",
-                )
+                response = RedirectResponse(url="http://localhost:5173/signin?status=error&message=Email%20already%20registered%20with%20email%20and%20password")  
+                return response
         else:
             new_user = UserInDB(
                 id=user_id,
@@ -448,5 +518,6 @@ async def google_callback(request: Request):
         )
         return response
     except APIException as e:
+        print(e)
         logger.error("Error occurred during Google OAuth callback: {}", str(e))
         raise e
