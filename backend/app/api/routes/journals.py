@@ -1,5 +1,6 @@
+from email import message
 from fastapi import APIRouter, Request, status, HTTPException
-from datetime import date
+from datetime import date, datetime
 from uuid import uuid4
 from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
@@ -11,9 +12,6 @@ from loguru import logger
 from app.utils.otp_utils import get_history, store_draft, store_otp
 from app.utils.utils import submit_draft
 from app.utils.chatbot_utils import (
-    filter_by_embeddings,
-    filter_by_moods,
-    filter_by_tags,
     final_response,
     get_journals_by_date,
     query_function,
@@ -23,36 +21,10 @@ from app.utils.chatbot_utils import (
 router = APIRouter()
 
 
-@router.post("/drafts")
+@router.post("/draft/save")
 async def save_drafts(request: Request, draft: DraftRequest):
     user = getattr(request.state, "user", None)
     logger.info(f"User: {user}, User ID type: {type(user['id']) if user else 'None'}")
-
-    if not user:
-        logger.warning("Unauthorized access attempt")
-        raise APIException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            message="You are not authorized to access this resource",
-            detail="Please login to access this resource",
-        )
-
-    if not draft.content:
-        logger.error("Draft content is empty")
-        raise APIException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            message="No Content To Save",
-            detail="There is Nothing Written To Save",
-            hint="Write Something",
-        )
-
-    if not draft.title:  # Fixed duplicate check for content; assuming you meant title
-        logger.error("Draft title is empty")
-        raise APIException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            message="No Title To Save",
-            detail="There is Nothing Written In Title To Save",
-            hint="Write Something",
-        )
 
     try:
         today = date.today().isoformat()
@@ -63,15 +35,12 @@ async def save_drafts(request: Request, draft: DraftRequest):
             "user_id": user["id"],
             "tags": draft.tags,
             "title": draft.title,
+            "rich_text": draft.rich_text,
         }
 
         logger.info(f"Draft data prepared: {draft_data}, Type: {type(draft_data)}")
         store_draft(draft_data, redis_key)
         logger.debug(f"Draft stored in Redis with key: {redis_key}")
-
-        # Uncomment if you need to store OTP
-        # store_otp("mohammedrupawala8@gmail.com", "123456")
-        # logger.debug("OTP stored")
 
         return {"message": "Stored Data In Redis", "draft_data": draft_data}
 
@@ -84,17 +53,42 @@ async def save_drafts(request: Request, draft: DraftRequest):
         )
 
 
-@router.post("/test")
-async def save_draft():
+@router.post("/draft/add")
+async def save_draft(request: Request):
     try:
         logger.info("Starting /test endpoint execution")
-        variable_test = submit_draft()
+        user = getattr(request.state, "user", None)
+        print(user["id"])
+        from datetime import date
+
+        today = date.today().isoformat()  # 'YYYY-MM-DD'
+        get_today_journal = (
+            db.table("journals")
+            .select("*")
+            .eq("created_at", today)
+            .eq("user_id", user["id"])
+            .execute()
+        )
+        print(f"Todays Journals : {get_today_journal}")
+        if get_today_journal.data and len(get_today_journal.data) > 0:
+            raise APIException(
+                status_code=400,
+                detail="You Have Submitted Today's Journal, Come again Tomorrow",
+                message="You Have Submitted Today's Journal",
+            )
+        variable_test = submit_draft(user["id"])
         # logger.debug(f"submit_draft result: {variable_test}")
         return {"message": variable_test}
+    except APIException as e:
+        logger.error(f"Custom APIException caught: {str(e.message)}")
+        raise e  # Re-raise as-is
+
     except Exception as e:
-        logger.exception(f"Error in /test endpoint: {str(e)}")
+        logger.exception(f"Unexpected error in /test endpoint: {str(e)}")
         raise APIException(
-            status_code=400, detail=str(e), message=f"Error occurred: {str(e)}"
+            status_code=500,
+            detail="Internal Server Error",
+            message=f"An unexpected error occurred: {str(e)}",
         )
 
 
@@ -102,32 +96,18 @@ async def save_draft():
 async def getQuery(request: Request, user_query: ChatbotType):
     logger.info(f"Received chatbot query: {user_query.query}")
 
-    if not user_query.query:
-        logger.error("Empty query received")
-        raise APIException(status_code=400, detail="Enter A Query", message="No Query")
-
     try:
         filter_params = query_parser(user_query.query)
         logger.info(f"Parsed filter parameters: {filter_params}")
 
         user = getattr(request.state, "user", None)
-        if not user:
-            logger.warning("Unauthorized access attempt to /chatbot")
-            raise APIException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                message="You are not authorized to access this resource",
-                detail="Please login to access this resource",
-            )
 
-        # Load chat history
         try:
             history = get_history(user_id=user["id"])
-            # logger.debug(f"Loaded history: {history}")
         except Exception as e:
             logger.error(f"Failed to load history: {str(e)}")
-            history = []  # Fallback to empty history
+            history = []
 
-        # Initialize llm_data
         llm_data = []
 
         if filter_params.get("is_history", False):
@@ -140,7 +120,6 @@ async def getQuery(request: Request, user_query: ChatbotType):
                     user_id=user["id"],
                     is_history=True,
                 )
-                # logger.debug(f"Final result for history query: {final_result}")
                 return final_result
             except Exception as e:
                 logger.exception(f"Error processing history query: {str(e)}")
@@ -176,7 +155,6 @@ async def getQuery(request: Request, user_query: ChatbotType):
                     "title_search": result.get("title_search", []),
                 }
                 llm_data.append(data_object)
-            # logger.debug(f"Prepared llm_data: {llm_data}")
 
         try:
             final_result = final_response(
@@ -186,7 +164,6 @@ async def getQuery(request: Request, user_query: ChatbotType):
                 user_id=user["id"],
                 is_history=False,
             )
-            # logger.debug(f"Final result for journal query: {final_result}")
             return final_result
         except Exception as e:
             logger.exception(f"Error in final_response for journal query: {str(e)}")
@@ -198,6 +175,63 @@ async def getQuery(request: Request, user_query: ChatbotType):
 
     except Exception as e:
         logger.exception(f"Unexpected error in /chatbot: {str(e)}")
+        raise APIException(
+            status_code=500, detail=str(e), message="An unexpected error occurred"
+        )
+
+
+@router.get("/get-all-history")
+def get_chat_history(request: Request):
+    try:
+        user = getattr(request.state, "user", None)
+        history = get_history(user["id"])
+        if not history:
+            return []
+        else:
+            logger.info(f"Chatbot History is {history}")
+            return history
+    except Exception as e:
+        logger.exception(f"Unexpected error in getting chatbot history: {str(e)}")
+        raise APIException(
+            status_code=500, detail=str(e), message="An unexpected error occurred"
+        )
+
+
+@router.get("/get-all-journal")
+def get_all_journal(request: Request):
+    try:
+        user = getattr(request.state, "user", None)
+        response = get_journals_by_date(user["id"])
+
+        if not response or not response[0]:
+            raise APIException(
+                status_code=404, message="There are no journals written."
+            )
+
+        journals = response
+        data = []
+
+        for journal in journals:
+            created_at = journal.get("created_at")
+            if not created_at:
+                continue
+
+            # Parse and format date
+            date_obj = datetime.strptime(created_at, "%Y-%m-%d")
+            formatted_date = date_obj.strftime("%d %B, %Y").lstrip("0")
+
+            # Prepare data
+            data_obj = {
+                "content": journal.get("content", ""),
+                "date": formatted_date,
+                "moods": journal.get("moods", {}),
+                "title": journal.get("title", ""),
+            }
+            data.append(data_obj)
+
+        return {"journals": data}
+    except Exception as e:
+        logger.exception(f"Unexpected error in getting all journals: {str(e)}")
         raise APIException(
             status_code=500, detail=str(e), message="An unexpected error occurred"
         )

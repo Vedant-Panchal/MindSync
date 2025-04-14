@@ -11,6 +11,7 @@ interface ChatbotState {
   isLoading: boolean;
   error: string | null;
   addMessage: (message: Message) => void;
+  setMessages: (messages: Message[]) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   resetChat: () => void;
@@ -18,12 +19,13 @@ interface ChatbotState {
 
 export const useChatStore = create<ChatbotState>((set) => ({
   messages: [],
-  journals: [],
   isLoading: false,
   error: null,
 
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
+
+  setMessages: (messages) => set({ messages }), // Initialize messages
 
   setLoading: (isLoading) => set({ isLoading }),
 
