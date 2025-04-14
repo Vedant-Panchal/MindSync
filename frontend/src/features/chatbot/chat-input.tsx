@@ -5,9 +5,9 @@ import {
   PromptInputActions,
   PromptInputTextarea,
 } from "@/features/chatbot/prompt-input";
-import { IconMicrophone } from "@tabler/icons-react";
+import { IconMicrophone, IconMicrophoneOff } from "@tabler/icons-react";
 import { ArrowUp, Square } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
@@ -19,19 +19,30 @@ export function ChatInputWithActions() {
     transcript,
     listening,
     resetTranscript,
-    finalTranscript,
-    interimTranscript,
     browserSupportsContinuousListening,
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
-
+  const startListening = () => {
+    // console.log("Started listening");
+    SpeechRecognition.abortListening();
+    resetTranscript();
+    SpeechRecognition.startListening({
+      continuous: true,
+      language: "en-IN",
+    });
+  };
+  const stopListening = () => {
+    // console.log("Stopped listening");
+    setInput(transcript);
+    SpeechRecognition.stopListening();
+  };
   useEffect(() => {
-    console.log("Live Transcript:", interimTranscript);
-  }, [interimTranscript]);
+    const debounce = setTimeout(() => {
+      setInput(transcript);
+    }, 300);
 
-  if (!browserSupportsSpeechRecognition) {
-    return <span>Browser doesn't support speech recognition.</span>;
-  }
+    return () => clearTimeout(debounce);
+  }, [transcript]);
 
   const handleSubmit = () => {
     if (input.trim()) {
@@ -43,20 +54,9 @@ export function ChatInputWithActions() {
     }
   };
 
-  const toggleListening = () => {
-    if (listening) {
-      SpeechRecognition.stopListening();
-    } else {
-      SpeechRecognition.startListening({
-        continuous: true,
-        interimResults: true,
-      });
-    }
-  };
-
   return (
     <PromptInput
-      value={input || transcript}
+      value={input}
       onValueChange={setInput}
       isLoading={isLoading}
       onSubmit={handleSubmit}
@@ -70,12 +70,20 @@ export function ChatInputWithActions() {
             variant="default"
             size="icon"
             className={`h-8 w-8 rounded-full ${listening ? "bg-red-500" : ""}`}
-            onClick={toggleListening}
+            disabled={!browserSupportsContinuousListening}
+            onClick={listening ? stopListening : startListening}
           >
             {listening ? (
               <Square className="size-5 fill-current" />
             ) : (
-              <IconMicrophone className="size-5" />
+              <>
+                <IconMicrophoneOff
+                  className={`size-5 ${browserSupportsSpeechRecognition && "hidden"}`}
+                />
+                <IconMicrophone
+                  className={`size-5 ${!browserSupportsSpeechRecognition && "hidden"}`}
+                />
+              </>
             )}
           </Button>
         </PromptInputAction>

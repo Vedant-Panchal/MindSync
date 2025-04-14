@@ -4,15 +4,12 @@ import { ChatInputWithActions } from "@/features/chatbot/chat-input";
 import { Markdown } from "@/features/chatbot/markdown";
 import {
   Message,
-  MessageAction,
-  MessageActions,
   MessageAvatar,
   MessageContent,
 } from "@/features/chatbot/message";
 import { ResponseStream } from "@/features/chatbot/response-stream";
 import { ScrollButton } from "@/features/chatbot/scroll-button";
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 export const Route = createFileRoute("/(app)/app/chat")({
@@ -143,15 +140,6 @@ function RouteComponent() {
       }
     };
   }, []);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    const text =
-      "I can help with a variety of tasks:\n\n- Answering questions\n- Providing information\n- Assisting with coding\n- Generating creative content\n\nWhat would you like help with today?";
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
   return (
     <div className="relative flex h-full w-full flex-col overflow-y-hidden">
       <div className="flex items-center justify-between border-b p-3">
