@@ -66,7 +66,7 @@ def get_history(user_id: str):
         logging.info(
             f"📦 History retrieved successfully from Redis for user ID '{user_id}'."
         )
-        loaded_data = json.loads(data)
+        loaded_data:list = json.loads(data)
         return loaded_data
 
     except Exception as e:

@@ -74,15 +74,7 @@ def query_parser(user_query: str):
     try:
         parsed = json.loads(cleaned)
     except json.JSONDecodeError:
-        # print("⚠️ Failed to parse JSON:\n", cleaned)
         return {}
-
-    # if parsed.get("date_range"):
-    #     for key in ["start", "end"]:
-    #         if parsed["date_range"].get(key):
-    #             dt = dateparser.parse(parsed["date_range"][key])
-    #             parsed["date_range"][key] = dt.date().isoformat() if dt else None
-    # print(normalized_dates)
     return parsed
 
 
@@ -102,7 +94,6 @@ def get_journals_by_date(user_id, start_date=None, end_date=None):
             print(f"Filtering journals until {end_date}")
             query = query.lte("created_at", end_date)
 
-        # Now execute the final composed query
         response = query.execute()
         data = response.data
 
@@ -236,9 +227,6 @@ def filter_by_tags(tags: list, data):
             message="Error while fetching journals by tags",
         )
 
-
-# Configure the API
-genai.configure(api_key=GEMINI_KEY)
 
 # Define tools
 tools = [

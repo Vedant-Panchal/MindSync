@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 import json
-from typing import Dict, List
+from typing import Awaitable, Dict, List
 from uuid import UUID, uuid4
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
@@ -92,67 +92,58 @@ def analyze_mood(text: str) -> dict:
     return {"dominant": dominant_mood, **top_moods}
 
 
-def submit_draft():
+def submit_draft(user_id : str):
     today = datetime.now(timezone.utc).date()
-    print(today)
-    keys = redis_client.keys(f"Draft:*:{today}")
-    print(keys)
-    if not keys:
-        raise APIException(
-            status_code=400, detail="NO keys in Redis", message="No Drafts Present"
-        )
-    for key in keys:
-        draft_data = redis_client.get(key)
-        if draft_data:
-            try:
-                journal_id = str(uuid4())
-                draft_dict = json.loads(draft_data)
-                draft = DraftCreate(**draft_dict)
-                user_id = str(draft.user_id)
-                logger.info(f"Draft Data: {draft}, User ID: {user_id}")
-                chunks = text_splitter.split_text(draft.content)
-                combine_embeddings = generate_embedding(draft.content)
-                moods = analyze_mood(draft.content)
-                section_number = 0
+    today_key = date.today().isoformat()
+    draft_data = redis_client.get(f"Draft:{user_id}:{today_key}")
+    print(draft_data)
+    if draft_data:
+        try:
+            journal_id = str(uuid4())
+            draft_dict = json.loads(draft_data)
+            draft = DraftCreate(**draft_dict)
+            logger.info(f"Draft Data: {draft}, User ID: {user_id}")
+            chunks = text_splitter.split_text(draft.content)
+            combine_embeddings = generate_embedding(draft.content)
+            moods = analyze_mood(draft.content)
+            section_number = 0
 
-                journal = aggregate_journal(
-                    chunks,
-                    user_id,
-                    str(today),
-                    combine_embeddings,
-                    draft.tags,
-                    journal_id,
-                    title=draft.title,
-                    title_embedding=direct_embedding(draft.title),
-                )
-                data_json = jsonable_encoder(journal)
-                insert_journal(data_json, db)
+            journal = aggregate_journal(
+                chunks,
+                user_id,
+                str(today),
+                combine_embeddings,
+                draft.tags,
+                journal_id,
+                title=draft.title,
+                title_embedding=direct_embedding(draft.title),
+                rich_text = draft.rich_text
+            )
+            data_json = jsonable_encoder(journal)
+            insert_journal(data_json, db)
 
-                # return data_json
-                for chunk in chunks:
-                    section = process_draft_chunk(
-                        journal_id, chunk, section_number, user_id, today
-                    )
-                    section_data = section
-                    section_number += 1
-                    id = insert_journal_section(section_data, db)
-                    logger.info(
-                        f"✅ Processed draft for {today} and stored in Supabase"
-                    )
-                    # mood = section_data.moods
-                    # print(f"Section Number {section_number} : Moods : {mood['dominant']}")
-                return id
+            for chunk in chunks:
+                section = process_draft_chunk(
+                    journal_id, chunk, section_number, user_id, today
+                )
+                section_data = section
+                section_number += 1
+                id = insert_journal_section(section_data, db)
+                logger.info(
+                    f"✅ Processed draft for {today} and stored in Supabase"
+                )
+            return user_id
 
-            except ValueError as ve:
-                logger.error(f"Error processing draft: {str(ve)}")
-                raise APIException(
-                    status_code=400, detail=str(ve), message="Value Error Is Coming"
-                )
-            except Exception as e:
-                logger.error(f"Error processing draft: {str(e)}")
-                raise APIException(
-                    status_code=400, detail=str(e), message="Exception Is Coming"
-                )
+        except ValueError as ve:
+            logger.error(f"Error processing draft: {str(ve)}")
+            raise APIException(
+                status_code=400, detail=str(ve), message="Value Error Is Coming"
+            )
+        except Exception as e:
+            logger.error(f"Error processing draft: {str(e)}")
+            raise APIException(
+                status_code=400, detail=str(e), message="Exception Is Coming"
+            )
     raise APIException(
         status_code=400,
         detail="No valid draft data found",
@@ -215,6 +206,7 @@ def aggregate_journal(
     journal_id: str,
     title: str,
     title_embedding: list[float],
+    rich_text : str
 ):
     aggregated_content = " ".join(chunks)
     moods = {}  # Dictionary to store aggregated mood scores
@@ -250,6 +242,7 @@ def aggregate_journal(
         "created_at": datetime.now(timezone.utc),
         "title": title,
         "title_embedding": title_embedding[0],
+        "rich_text" : rich_text
     }
     # return JournalCreate(**journal_data)
     return Journal(**journal_data)
