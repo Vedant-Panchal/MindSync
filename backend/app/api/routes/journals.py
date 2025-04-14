@@ -35,7 +35,7 @@ async def save_drafts(request: Request, draft: DraftRequest):
             "user_id": user["id"],
             "tags": draft.tags,
             "title": draft.title,
-            "rich_text" : draft.rich_text
+            "rich_text": draft.rich_text,
         }
 
         logger.info(f"Draft data prepared: {draft_data}, Type: {type(draft_data)}")
@@ -54,23 +54,29 @@ async def save_drafts(request: Request, draft: DraftRequest):
 
 
 @router.post("/draft/add")
-async def save_draft(request : Request):
+async def save_draft(request: Request):
     try:
         logger.info("Starting /test endpoint execution")
         user = getattr(request.state, "user", None)
-        print(user['id'])
+        print(user["id"])
         from datetime import date
 
         today = date.today().isoformat()  # 'YYYY-MM-DD'
-        get_today_journal = db.table("journals").select("*").eq("created_at", today).eq("user_id", user['id']).execute()  
+        get_today_journal = (
+            db.table("journals")
+            .select("*")
+            .eq("created_at", today)
+            .eq("user_id", user["id"])
+            .execute()
+        )
         print(f"Todays Journals : {get_today_journal}")
         if get_today_journal.data and len(get_today_journal.data) > 0:
             raise APIException(
                 status_code=400,
                 detail="You Have Submitted Today's Journal, Come again Tomorrow",
-                message="You Have Submitted Today's Journal"
+                message="You Have Submitted Today's Journal",
             )
-        variable_test = submit_draft(user['id'])
+        variable_test = submit_draft(user["id"])
         # logger.debug(f"submit_draft result: {variable_test}")
         return {"message": variable_test}
     except APIException as e:
@@ -82,7 +88,7 @@ async def save_draft(request : Request):
         raise APIException(
             status_code=500,
             detail="Internal Server Error",
-            message=f"An unexpected error occurred: {str(e)}"
+            message=f"An unexpected error occurred: {str(e)}",
         )
 
 
@@ -175,13 +181,13 @@ async def getQuery(request: Request, user_query: ChatbotType):
 
 
 @router.get("/get-all-history")
-def get_chat_history(request:Request):
+def get_chat_history(request: Request):
     try:
         user = getattr(request.state, "user", None)
-        history = get_history(user['id'])
+        history = get_history(user["id"])
         if not history:
             return []
-        else :
+        else:
             logger.info(f"Chatbot History is {history}")
             return history
     except Exception as e:
@@ -189,25 +195,24 @@ def get_chat_history(request:Request):
         raise APIException(
             status_code=500, detail=str(e), message="An unexpected error occurred"
         )
-    
+
 
 @router.get("/get-all-journal")
-def get_all_journal(request:Request):
+def get_all_journal(request: Request):
     try:
         user = getattr(request.state, "user", None)
-        response = get_journals_by_date(user['id'])
+        response = get_journals_by_date(user["id"])
 
         if not response or not response[0]:
             raise APIException(
-                status_code=404,
-                message="There are no journals written."
+                status_code=404, message="There are no journals written."
             )
 
         journals = response
         data = []
 
         for journal in journals:
-            created_at = journal.get('created_at')
+            created_at = journal.get("created_at")
             if not created_at:
                 continue
 
@@ -217,10 +222,10 @@ def get_all_journal(request:Request):
 
             # Prepare data
             data_obj = {
-                'content': journal.get('content', ''),
-                'date': formatted_date,
-                'moods': journal.get('moods', {}),
-                'title':journal.get('title','')
+                "content": journal.get("content", ""),
+                "date": formatted_date,
+                "moods": journal.get("moods", {}),
+                "title": journal.get("title", ""),
             }
             data.append(data_obj)
 
@@ -230,7 +235,3 @@ def get_all_journal(request:Request):
         raise APIException(
             status_code=500, detail=str(e), message="An unexpected error occurred"
         )
-
-
-
-

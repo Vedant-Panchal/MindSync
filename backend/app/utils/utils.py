@@ -92,7 +92,7 @@ def analyze_mood(text: str) -> dict:
     return {"dominant": dominant_mood, **top_moods}
 
 
-def submit_draft(user_id : str):
+def submit_draft(user_id: str):
     today = datetime.now(timezone.utc).date()
     today_key = date.today().isoformat()
     draft_data = redis_client.get(f"Draft:{user_id}:{today_key}")
@@ -117,7 +117,7 @@ def submit_draft(user_id : str):
                 journal_id,
                 title=draft.title,
                 title_embedding=direct_embedding(draft.title),
-                rich_text = draft.rich_text
+                rich_text=draft.rich_text,
             )
             data_json = jsonable_encoder(journal)
             insert_journal(data_json, db)
@@ -129,9 +129,7 @@ def submit_draft(user_id : str):
                 section_data = section
                 section_number += 1
                 id = insert_journal_section(section_data, db)
-                logger.info(
-                    f"✅ Processed draft for {today} and stored in Supabase"
-                )
+                logger.info(f"✅ Processed draft for {today} and stored in Supabase")
             return user_id
 
         except ValueError as ve:
@@ -206,7 +204,7 @@ def aggregate_journal(
     journal_id: str,
     title: str,
     title_embedding: list[float],
-    rich_text : str
+    rich_text: str,
 ):
     aggregated_content = " ".join(chunks)
     moods = {}  # Dictionary to store aggregated mood scores
@@ -242,7 +240,7 @@ def aggregate_journal(
         "created_at": datetime.now(timezone.utc),
         "title": title,
         "title_embedding": title_embedding[0],
-        "rich_text" : rich_text
+        "rich_text": rich_text,
     }
     # return JournalCreate(**journal_data)
     return Journal(**journal_data)

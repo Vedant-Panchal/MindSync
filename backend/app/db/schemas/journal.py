@@ -8,7 +8,7 @@ class DraftRequest(BaseModel):
     content: str
     tags: list
     title: str
-    rich_text : str
+    rich_text: str
 
 
 class DraftCreate(BaseModel):
@@ -17,7 +17,7 @@ class DraftCreate(BaseModel):
     date: str
     tags: list
     title: str
-    rich_text : str
+    rich_text: str
 
 
 class JournalCreate(BaseModel):
@@ -37,7 +37,7 @@ class Journal(BaseModel):
     title: str
     title_embedding: list[float]
     created_at: datetime
-    rich_text : str
+    rich_text: str
 
 
 # Journal Section (Chunk) schema
