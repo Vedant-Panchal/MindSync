@@ -17,7 +17,7 @@ export default function DashboardLayout() {
   return (
     <SidebarProvider>
       <AppSidebar variant="floating" data={sidebardata} />
-      <SidebarInset>
+      <SidebarInset className="max-h-screen">
         <SiteHeader />
         <Outlet />
       </SidebarInset>

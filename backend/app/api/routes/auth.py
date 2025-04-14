@@ -378,6 +378,7 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
 async def google_login(request: Request):
     return await oauth.google.authorize_redirect(request, GOOGLE_URI)
 
+
 @router.get("/google/callback")
 async def google_callback(request: Request):
     token: dict = await oauth.google.authorize_access_token(request)
@@ -407,7 +408,9 @@ async def google_callback(request: Request):
             user = existing_user[0]
             # If the existing user was created via email/password, prevent duplicate Google login
             if user.get("oauth_provider") == OAuthType.local.value:
-                response = RedirectResponse(url="http://localhost:5173/signin?status=error&message=Email%20already%20registered%20with%20email%20and%20password")  
+                response = RedirectResponse(
+                    url="http://localhost:5173/signin?status=error&message=Email%20already%20registered%20with%20email%20and%20password"
+                )
                 return response
         else:
             new_user = UserInDB(

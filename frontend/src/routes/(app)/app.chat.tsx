@@ -19,35 +19,64 @@ export const Route = createFileRoute("/(app)/app/chat")({
   component: RouteComponent,
 });
 
+interface IMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+}
 function RouteComponent() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<IMessage[]>([
     {
       id: 1,
       role: "user",
-      content: "Hello! Can you help me with a coding question?",
+      content: "Hi there! Can you assist me with a programming query?",
     },
     {
       id: 2,
       role: "assistant",
       content:
-        "Of course! I'd be happy to help with your coding question. What would you like to know?",
+        "Absolutely! I'm here to help with your programming questions. What do you need assistance with?",
     },
     {
       id: 3,
       role: "user",
-      content: "How do I create a responsive layout with CSS Grid?",
+      content: "Can you explain how to use the `useState` hook in React?",
     },
     {
       id: 4,
       role: "assistant",
       content:
-        "Creating a responsive layout with CSS Grid is straightforward. Here's a basic example:\n\n```css\n.container {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n  gap: 1rem;\n}\n```\n\nThis creates a grid where:\n- Columns automatically fit as many as possible\n- Each column is at least 250px wide\n- Columns expand to fill available space\n- There's a 1rem gap between items\n\nWould you like me to explain more about how this works?",
+        "Certainly! The `useState` hook is used to add state to functional components in React. Here's an example:\n\n```tsx\nimport { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <div>\n      <p>Count: {count}</p>\n      <button onClick={() => setCount(count + 1)}>Increment</button>\n    </div>\n  );\n}\n```\n\nThis creates a counter that increments when the button is clicked. Would you like more details?",
     },
     {
       id: 5,
       role: "user",
       content:
-        "Creating a responsive layout with CSS Grid is straightforward. Here's a basic example:\n\n```css\n.container {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));\n  gap: 1rem;\n}\n```\n\nThis creates a grid where:\n- Columns automatically fit as many as possible\n- Each column is at least 250px wide\n- Columns expand to fill available space\n- There's a 1rem gap between items\n\nWould you like me to explain more about how this works?",
+        "Thanks! That makes sense. Can you also explain how to manage multiple states?",
+    },
+    {
+      id: 6,
+      role: "assistant",
+      content:
+        'Sure! You can use multiple `useState` calls to manage multiple states. For example:\n\n```tsx\nfunction Form() {\n  const [name, setName] = useState(\'\');\n  const [email, setEmail] = useState(\'\');\n\n  return (\n    <form>\n      <input\n        type="text"\n        value={name}\n        onChange={(e) => setName(e.target.value)}\n        placeholder="Name"\n      />\n      <input\n        type="email"\n        value={email}\n        onChange={(e) => setEmail(e.target.value)}\n        placeholder="Email"\n      />\n    </form>\n  );\n}\n```\n\nThis allows you to manage `name` and `email` states independently. Let me know if you\'d like further clarification!',
+    },
+    {
+      id: 7,
+      role: "user",
+      content:
+        "Got it! How about using `useReducer` for more complex state management?",
+    },
+    {
+      id: 8,
+      role: "assistant",
+      content:
+        "Great question! The `useReducer` hook is useful for managing more complex state logic. Here's an example:\n\n```tsx\nimport { useReducer } from 'react';\n\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'increment':\n      return { count: state.count + 1 };\n    case 'decrement':\n      return { count: state.count - 1 };\n    default:\n      throw new Error();\n  }\n}\n\nfunction Counter() {\n  const [state, dispatch] = useReducer(reducer, { count: 0 });\n\n  return (\n    <div>\n      <p>Count: {state.count}</p>\n      <button onClick={() => dispatch({ type: 'increment' })}>Increment</button>\n      <button onClick={() => dispatch({ type: 'decrement' })}>Decrement</button>\n    </div>\n  );\n}\n```\n\nThis approach is ideal for scenarios with complex state transitions. Let me know if you'd like to dive deeper!",
+    },
+    {
+      id: 9,
+      role: "user",
+      content:
+        "Thanks for the explanation! I think I have a better understanding now.",
     },
   ]);
 
@@ -56,13 +85,16 @@ function RouteComponent() {
   const streamContentRef = useRef("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-
+  const [streamingContent, setStreamingContent] = useState("");
+  const [streamingId, setStreamingId] = useState<number | null>(null);
+  const [lastMessage, setLastMessage] = useState<IMessage | null>(null);
   const streamResponse = () => {
     if (isStreaming) return;
 
     setIsStreaming(true);
+    console.log("Stream Started");
     const fullResponse =
-      "Yes, I'd be happy to explain more about CSS Grid! The `grid-template-columns` property defines the columns in your grid. The `repeat()` function is a shorthand that repeats a pattern. `auto-fit` will fit as many columns as possible in the available space. The `minmax()` function sets a minimum and maximum size for each column. This creates a responsive layout that automatically adjusts based on the available space without requiring media queries.";
+      "Yes I'd be happy to explain more about CSS Grid! The `grid-template-columns` property defines the columns in your grid. The `repeat()` function is a shorthand that repeats a pattern. `auto-fit` will fit as many columns as possible in the available space. The `minmax()` function sets a minimum and maximum size for each column. This creates a responsive layout that automatically adjusts based on the available space without requiring media queries.";
 
     const newMessageId = messages.length + 1;
     setMessages((prev) => [
@@ -75,22 +107,31 @@ function RouteComponent() {
     ]);
 
     let charIndex = 0;
+    setStreamingId(newMessageId);
     streamContentRef.current = "";
 
     streamIntervalRef.current = setInterval(() => {
       if (charIndex < fullResponse.length) {
         streamContentRef.current += fullResponse[charIndex];
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === newMessageId
-              ? { ...msg, content: streamContentRef.current }
-              : msg,
-          ),
-        );
+        setStreamingContent(streamContentRef.current); // update stream UI only
         charIndex++;
       } else {
         clearInterval(streamIntervalRef.current!);
+        console.log("Stream Ended");
         setIsStreaming(false);
+        // Finalize the message
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === newMessageId ? { ...msg, content: fullResponse } : msg,
+          ),
+        );
+        setLastMessage({
+          id: newMessageId,
+          role: "assistant",
+          content: fullResponse,
+        });
+        setStreamingContent("");
+        setStreamingId(null);
       }
     }, 30);
   };
@@ -118,14 +159,15 @@ function RouteComponent() {
           {isStreaming ? "Streaming..." : "Show Streaming"}
         </Button>
       </div>
-      <div className="absolute bottom-20 flex w-full translate-x-[-3%] items-center justify-center">
+      <div className="absolute bottom-40 flex w-full translate-x-[-3%] items-center justify-center">
         <ScrollButton containerRef={chatContainerRef} scrollRef={bottomRef} />
       </div>
       <ChatContainer
-        className="h-full flex-1 space-y-4 p-4"
+        className="scrollbar-hide h-full flex-1 space-y-4 p-4"
         ref={chatContainerRef}
       >
-        {messages.map((message) => {
+        {/* Show history chats */}
+        {messages.slice(0, messages.length - 1).map((message) => {
           const isAssistant = message.role === "assistant";
 
           return (
@@ -142,44 +184,61 @@ function RouteComponent() {
                   fallback="AI"
                 />
               )}
-              <div className="max-w-[85%] flex-1 sm:max-w-[75%]">
+              <div className="max-w-[85%] sm:max-w-[75%]">
                 {isAssistant ? (
                   <div className="bg-secondary text-foreground prose rounded-lg p-2">
-                    <ResponseStream
-                      textStream={message.content}
-                      mode="fade"
-                      className="text-sm"
-                      fadeDuration={800}
-                      speed={100}
-                    />
+                    <Markdown>{message.content}</Markdown>
+
                     {/* <Markdown>{message.content}</Markdown> */}
                   </div>
                 ) : (
                   <>
-                    <MessageContent className="bg-primary text-primary-foreground">
+                    <MessageContent className="bg-primary text-primary-foreground p-2">
                       {message.content}
                     </MessageContent>
-                    <MessageActions className="self-end">
-                      <MessageAction tooltip="Copy to clipboard">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-full"
-                          onClick={handleCopy}
-                        >
-                          <Copy
-                            className={`size-4 ${copied ? "text-green-500" : ""}`}
-                          />
-                        </Button>
-                      </MessageAction>
-                    </MessageActions>
                   </>
                 )}
               </div>
             </Message>
           );
         })}
-        <div ref={bottomRef} />
+
+        {isStreaming ? (
+          <>
+            <div className="ml-10 h-full">
+              {/* @ts-ignore */}
+              <l-mirage size="60" speed="2.5" color="#3981f6" />
+            </div>
+          </>
+        ) : lastMessage ? (
+          <Message
+            key={lastMessage.id}
+            className={
+              lastMessage.role === "user" ? "justify-end" : "justify-start"
+            }
+          >
+            {lastMessage.role === "assistant" && (
+              <MessageAvatar
+                src="/avatars/ai.png"
+                alt="AI Assistant"
+                fallback="AI"
+              />
+            )}
+            <div className="max-w-[85%] flex-1 sm:max-w-[75%]">
+              <div className="bg-secondary text-foreground prose rounded-lg p-2">
+                <ResponseStream
+                  textStream={lastMessage.content}
+                  mode="fade"
+                  className="text-sm"
+                  fadeDuration={800}
+                  speed={100}
+                />
+              </div>
+            </div>
+          </Message>
+        ) : null}
+
+        <div className="mt-28" ref={bottomRef} />
       </ChatContainer>
       <motion.div
         initial={{
