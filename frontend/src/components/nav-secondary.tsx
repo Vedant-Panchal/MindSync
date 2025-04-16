@@ -24,7 +24,6 @@ export function NavSecondary({
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   const navigate = useNavigate({ from: "/app" });
   const { pathname } = useLocation();
-  console.log(pathname);
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>

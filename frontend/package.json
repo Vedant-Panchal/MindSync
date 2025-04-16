@@ -72,6 +72,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "emblor": "^1.4.8",
     "input-otp": "^1.4.2",
     "ldrs": "^1.1.6",
     "lexical": "^0.30.0",

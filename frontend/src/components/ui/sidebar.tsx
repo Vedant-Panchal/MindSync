@@ -207,9 +207,6 @@ function Sidebar({
       </Sheet>
     );
   }
-  var paths = "/app/dashboard/abcd".split("/");
-  console.log(paths);
-
   return (
     <div
       className="group peer text-sidebar-foreground hidden md:block"

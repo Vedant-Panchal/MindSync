@@ -12,7 +12,9 @@ const API_PATHS = {
     GET_ME: `/auth/v1/me`,
   },
   JOURNALS: {
-    RANDOM_PRODUCTS: `/journals/random-products`,
+    ADD_DRAFT: `/api/v1/journals/draft/add`,
+    SUBMIT: `/api/v1/journals/draft/submit`,
+    GET_ALL: `/api/v1/journals/`,
   },
 };
 

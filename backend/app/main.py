@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
-from app.api.routes import auth, journals
+from app.api.routes import auth, journals, chatbot
 from app.core.security import AuthMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from loguru import logger
@@ -37,7 +37,8 @@ app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
 app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 app.include_router(auth.router, prefix="/auth/v1", tags=["Authentication"])
-app.include_router(journals.router)
+app.include_router(journals.router,prefix="/api/v1/journals", tags=["Journals"])
+app.include_router(chatbot.router,prefix="/api/v1/chat", tags=["Chatbot"])
 
 
 @app.get("/heartbeat", tags=["Health Check"])
