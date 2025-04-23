@@ -95,6 +95,7 @@ def analyze_mood(text: str) -> dict:
 def submit_draft(user_id: str):
     today = datetime.now(timezone.utc).date()
     today_key = date.today().isoformat()
+    print(f"Draft:{user_id}:{today_key}")
     draft_data = redis_client.get(f"Draft:{user_id}:{today_key}")
     print(draft_data)
     if draft_data:

@@ -7,9 +7,10 @@ from app.core.exceptions import APIException
 from app.db.schemas.journal import ChatbotType, DraftRequest
 from app.core.connection import db
 from fastapi.encoders import jsonable_encoder
+import json
 from loguru import logger
 
-from app.utils.otp_utils import get_history, store_draft, store_otp
+from app.utils.otp_utils import get_history, store_draft, store_history, store_otp
 from app.utils.utils import submit_draft
 from app.utils.chatbot_utils import (
     final_response,
@@ -41,7 +42,16 @@ async def getQuery(request: Request, user_query: ChatbotType):
             history = []
 
         llm_data = []
-
+        if not filter_params['is_related'] and not filter_params['is_history']:
+            logger.info('Query is not realted to Journals')
+            response  = {
+                "message" : "Query is not related to journal."
+            }
+            query_object = {"user_query": user_query.query, "response": response}
+            history.append(query_object)
+            dumped_history = json.dumps(history)
+            store_history(dumped_history, user['id'])
+            return response
         if filter_params.get("is_history", False):
             logger.info("Processing history-only query")
             try:
@@ -69,6 +79,8 @@ async def getQuery(request: Request, user_query: ChatbotType):
                 user_query.query,
                 filter_params,
             )
+
+            # logger.info(f'result is : {result}')
             logger.debug(f"Query function result: {result['title_search']}")
         except APIException as e:
             logger.exception(f"Error in query_function: {str(e)}")

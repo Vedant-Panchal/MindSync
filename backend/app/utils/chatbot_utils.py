@@ -11,9 +11,25 @@ from app.core.exceptions import APIException
 from app.utils.utils import direct_embedding
 from app.utils.otp_utils import store_history
 
+safety = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_LOW_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_LOW_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_LOW_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+        ]
 
-genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 GO_EMOTION_LABELS = [
     "admiration",
@@ -44,13 +60,16 @@ GO_EMOTION_LABELS = [
     "surprise",
     "neutral",
 ]
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel("gemini-1.5-flash-latest",safety_settings=safety)
+
+
 today = datetime.today().strftime("%Y-%m-%d")
 
 
 def query_parser(user_query: str):
     prompt = f"""
     You are a helpful assistant for an AI journaling app.
-
     Your job is to parse a user’s natural language query and any accompanying recollections into structured JSON to help the app search journal entries or determine if the query is purely conversational.
     Return ONLY JSON with these keys:
     1. "date_range": {{"start": "...", "end": "..."}} — extract any specific or relative time references like "last month", "yesterday", "April 6", etc. Use today’s date as: {today}
@@ -58,6 +77,8 @@ def query_parser(user_query: str):
     3. "tags": Any related tags such as activities (e.g. study, code, work), subjects (e.g. networks), people (e.g. classmates, teacher), or contexts (e.g. class, lecture, exam). Use **present tense** for activities and ensure that any verb forms like "working" are replaced by the correct noun form like "work". Give it in **singular** form where applicable.
     4. "title" : Provide a concise one-sentence title based on the user’s query that accurately captures the core subject for effective semantic search. If the query doesn’t explicitly mention a title, return an empty string.
     5. "is_history": Boolean — Set to true if the query does not involve fetching journal data (e.g., purely conversational queries like "What did I ask earlier?" or "tell me something from previous responses" or "Tell me a joke"), and false if it involves fetching journal data (e.g., mentions dates, moods, tags, titles, or journal-related terms like "show", "filter", "find").
+    6. "is_related" : Boolean - Set false if you think user query is not related to journal for example "a mathematics equation","a programming problem" until explicitly mentioned to do journal related task with it
+
     Respond with valid JSON only.
 
     Query and recall: "{user_query}"
@@ -356,16 +377,9 @@ def query_function(user_id: str, user_query: str, filter_parameters):
     try:
         # Generate content with function calling
         response = model.generate_content(contents=prompt, tools=tools)
-        logger.debug(response)
+        logger.debug(f"response is this : {response}")
         # Extract function calls from the response
         function_calls = response.candidates[0].content.parts
-        if not function_calls or not any(part.function_call for part in function_calls):
-            # raise APIException(
-            #     status_code=400,
-            #     detail="No function calls detected in response",
-            #     message="Invalid Query Processing",
-            # )
-            return []
 
         journals = []
         current_data = []
@@ -488,9 +502,7 @@ def query_function(user_id: str, user_query: str, filter_parameters):
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 
-# Configure the API
 genai.configure(api_key=GEMINI_KEY)
-
 
 def final_response(
     data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
@@ -543,6 +555,13 @@ def final_response(
         # logger.debug(data)
         # data_str = "\n".join([f"- Titled '{entry.get('title', 'Untitled')}' on {entry.get('date', 'unknown date')}: {entry.get('text', 'No details available')}" for entry in data])
         prompt = f"""
+        You are an intelligent journaling assistant.
+        Only respond if the user query is clearly related to journals, journal content, or journal history.
+        If the query is unrelated (e.g. about movies, news, random facts), respond with:
+        {{
+            "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+        }}
+
         This is the user query = '{user_query}'.
         Respond to this query with the help of this data: {data}.
         Use natural language and incorporate context from the conversation history if available.
@@ -554,7 +573,30 @@ def final_response(
         }}
         """
 
-    model = genai.GenerativeModel("gemini-1.5-flash-latest")
+
+    model = genai.GenerativeModel(
+        "gemini-1.5-flash-latest",
+        safety_settings=[
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_LOW_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_LOW_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_LOW_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+        ]
+    )
+
+
     try:
         transformed = []
         for entry in history:
@@ -570,7 +612,7 @@ def final_response(
         chat = model.start_chat(history=transformed)
         response = chat.send_message(prompt)
         response_text = response.text
-
+        logger.info(f"this is response : {response_text}" )
         cleaned = re.sub(
             r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.MULTILINE
         )
