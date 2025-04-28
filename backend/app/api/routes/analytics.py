@@ -3,5 +3,4 @@ from app.core.connection import db
 from datetime import datetime, timedelta
 
 
-
 router = APIRouter()

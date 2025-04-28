@@ -138,10 +138,6 @@ async def save_draft(request: Request):
             detail="Internal Server Error",
             message=f"An unexpected error occurred: {str(e)}",
         )
-    
-
-
-
 
 
 @router.get("/dashboard/analysis")
@@ -151,7 +147,7 @@ async def get_user_analysis(request: Request):
         if not user:
             return {"message": "User not authenticated.", "data": {}}
 
-        user_id = user['id']
+        user_id = user["id"]
         query = db.from_("journals").select("*").eq("user_id", user_id)
         journals = query.execute().data
 
@@ -192,7 +188,7 @@ async def get_user_analysis(request: Request):
         longest_streak = 1
         temp_streak = 1
         for i in range(1, len(journal_dates)):
-            if (journal_dates[i] - journal_dates[i-1]).days == 1:
+            if (journal_dates[i] - journal_dates[i - 1]).days == 1:
                 temp_streak += 1
             else:
                 temp_streak = 1
@@ -207,15 +203,17 @@ async def get_user_analysis(request: Request):
                 continue
             date = datetime.fromisoformat(date_str).date().strftime("%Y-%m-%d")
             moods = journal.get("moods", {})
-            
+
             if date not in daily_moods:
                 daily_moods[date] = {}
-            
+
             for mood, score in moods.items():
                 # Daily mood aggregation
                 daily_moods[date][mood] = daily_moods[date].get(mood, 0) + score
                 # All mood count aggregation
-                all_mood_count[mood] = all_mood_count.get(mood, 0) + 1  # +1 per occurrence
+                all_mood_count[mood] = (
+                    all_mood_count.get(mood, 0) + 1
+                )  # +1 per occurrence
 
         return {
             "message": "User analysis data generated successfully.",
@@ -226,8 +224,8 @@ async def get_user_analysis(request: Request):
                 "longest_streak": longest_streak,
                 "journal_dates": [d.strftime("%Y-%m-%d") for d in journal_dates],
                 "daily_moods": daily_moods,
-                "all_mood_count": all_mood_count
-            }
+                "all_mood_count": all_mood_count,
+            },
         }
 
     except Exception as e:

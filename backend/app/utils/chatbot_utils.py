@@ -600,13 +600,19 @@ def final_response(
             )
 
         chat = model.start_chat(history=transformed)
-        response = chat.send_message(prompt)
-        response_text = response.text
-        logger.info(f"this is response : {response_text}")
+        response = chat.send_message(prompt,stream = True)
+
+        full_response = ""
+        for chunk in response:
+            if chunk.candidates:
+                part = chunk.candidates[0].content.parts[0].text
+                full_response += part
+
         cleaned = re.sub(
-            r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.MULTILINE
+        r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
         )
         parsed = json.loads(cleaned)
+        logger.info(f"this is response : {full_response}")
         query_object = {"user_query": user_query, "response": parsed}
         history.append(query_object)
         dumped_history = json.dumps(history)
