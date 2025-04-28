@@ -12,23 +12,14 @@ from app.utils.utils import direct_embedding
 from app.utils.otp_utils import store_history
 
 safety = [
-            {
-                "category": "HARM_CATEGORY_HARASSMENT",
-                "threshold": "BLOCK_LOW_AND_ABOVE"
-            },
-            {
-                "category": "HARM_CATEGORY_HATE_SPEECH",
-                "threshold": "BLOCK_LOW_AND_ABOVE"
-            },
-            {
-                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "threshold": "BLOCK_LOW_AND_ABOVE"
-            },
-            {
-                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-            },
-        ]
+    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_LOW_AND_ABOVE"},
+    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE"},
+    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_LOW_AND_ABOVE"},
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+    },
+]
 
 
 GO_EMOTION_LABELS = [
@@ -61,7 +52,7 @@ GO_EMOTION_LABELS = [
     "neutral",
 ]
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash-latest",safety_settings=safety)
+model = genai.GenerativeModel("gemini-1.5-flash-latest", safety_settings=safety)
 
 
 today = datetime.today().strftime("%Y-%m-%d")
@@ -504,6 +495,7 @@ from typing import List, Dict, Any, Optional
 
 genai.configure(api_key=GEMINI_KEY)
 
+
 def final_response(
     data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
 ) -> Dict[str, Any]:
@@ -573,29 +565,27 @@ def final_response(
         }}
         """
 
-
     model = genai.GenerativeModel(
         "gemini-1.5-flash-latest",
         safety_settings=[
             {
                 "category": "HARM_CATEGORY_HARASSMENT",
-                "threshold": "BLOCK_LOW_AND_ABOVE"
+                "threshold": "BLOCK_LOW_AND_ABOVE",
             },
             {
                 "category": "HARM_CATEGORY_HATE_SPEECH",
-                "threshold": "BLOCK_LOW_AND_ABOVE"
+                "threshold": "BLOCK_LOW_AND_ABOVE",
             },
             {
                 "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "threshold": "BLOCK_LOW_AND_ABOVE"
+                "threshold": "BLOCK_LOW_AND_ABOVE",
             },
             {
                 "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
             },
-        ]
+        ],
     )
-
 
     try:
         transformed = []
@@ -612,7 +602,7 @@ def final_response(
         chat = model.start_chat(history=transformed)
         response = chat.send_message(prompt)
         response_text = response.text
-        logger.info(f"this is response : {response_text}" )
+        logger.info(f"this is response : {response_text}")
         cleaned = re.sub(
             r"^```(?:json)?\s*|\s*```$", "", response_text.strip(), flags=re.MULTILINE
         )

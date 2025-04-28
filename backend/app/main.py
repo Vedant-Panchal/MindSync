@@ -37,8 +37,8 @@ app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
 app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 app.include_router(auth.router, prefix="/auth/v1", tags=["Authentication"])
-app.include_router(journals.router,prefix="/api/v1/journals", tags=["Journals"])
-app.include_router(chatbot.router,prefix="/api/v1/chat", tags=["Chatbot"])
+app.include_router(journals.router, prefix="/api/v1/journals", tags=["Journals"])
+app.include_router(chatbot.router, prefix="/api/v1/chat", tags=["Chatbot"])
 
 
 @app.get("/heartbeat", tags=["Health Check"])

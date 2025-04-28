@@ -20,6 +20,7 @@ from app.utils.chatbot_utils import (
 
 router = APIRouter()
 
+
 @router.get("/get")
 def get_all_journal(request: Request):
     try:
@@ -28,7 +29,10 @@ def get_all_journal(request: Request):
 
         if not response or not response[0]:
             raise APIException(
-                status_code=404, message="There are no journals written.",detail="Journals not found",hint="Please write a journal to see the list."
+                status_code=404,
+                message="There are no journals written.",
+                detail="Journals not found",
+                hint="Please write a journal to see the list.",
             )
 
         journals = response
@@ -56,7 +60,10 @@ def get_all_journal(request: Request):
     except APIException as e:
         logger.exception(f"Unexpected error in getting all journals: {str(e)}")
         raise APIException(
-            status_code=500, detail=str(e.detail), message=str(e.message),hint=str(e.hint)
+            status_code=500,
+            detail=str(e.detail),
+            message=str(e.message),
+            hint=str(e.hint),
         )
 
 

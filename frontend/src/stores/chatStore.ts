@@ -1,40 +1,37 @@
 import { create } from "zustand";
 
 type Message = {
+  id: number;
   role: "user" | "assistant";
   content: string;
   date?: string;
 };
 
-interface ChatbotState {
+type ChatbotState = {
   messages: Message[];
-  isLoading: boolean;
-  error: string | null;
-  addMessage: (message: Message) => void;
-  setMessages: (messages: Message[]) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
-  resetChat: () => void;
-}
+  input: string;
+  lastMessage: Message | null;
+  loading: boolean;
+  setLoading: (value: boolean) => void;
+  setLastMessage: (value: Message | null) => void;
+  setInput: (value: string) => void;
+  setMessages: (messagesOrMessage: Message | Message[]) => void;
+  clearMessages: () => void;
+};
 
-export const useChatStore = create<ChatbotState>((set) => ({
+export const useChatbotStore = create<ChatbotState>((set) => ({
   messages: [],
-  isLoading: false,
-  error: null,
-
-  addMessage: (message) =>
-    set((state) => ({ messages: [...state.messages, message] })),
-
-  setMessages: (messages) => set({ messages }), // Initialize messages
-
-  setLoading: (isLoading) => set({ isLoading }),
-
-  setError: (error) => set({ error }),
-
-  resetChat: () =>
-    set({
-      messages: [],
-      isLoading: false,
-      error: null,
-    }),
+  input: "",
+  lastMessage: null, // Initialize as null to avoid rendering empty messages
+  loading: false,
+  setLoading: (value) => set(() => ({ loading: value })),
+  setLastMessage: (message) => set(() => ({ lastMessage: message })),
+  setInput: (value) => set(() => ({ input: value })),
+  setMessages: (messagesOrMessage) =>
+    set((state) => ({
+      messages: Array.isArray(messagesOrMessage)
+        ? [...messagesOrMessage]
+        : [...state.messages, messagesOrMessage],
+    })),
+  clearMessages: () => set(() => ({ messages: [] })),
 }));

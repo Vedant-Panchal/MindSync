@@ -2,6 +2,9 @@ from email import message
 from fastapi import APIRouter, Request, status, HTTPException
 from datetime import date, datetime
 from uuid import uuid4
+
+from sqlalchemy import update
+from sympy import content
 from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
 from app.db.schemas.journal import ChatbotType, DraftRequest
@@ -20,6 +23,7 @@ from app.utils.chatbot_utils import (
 )
 
 router = APIRouter()
+
 
 @router.post("/start")
 async def getQuery(request: Request, user_query: ChatbotType):
@@ -42,15 +46,13 @@ async def getQuery(request: Request, user_query: ChatbotType):
             history = []
 
         llm_data = []
-        if not filter_params['is_related'] and not filter_params['is_history']:
-            logger.info('Query is not realted to Journals')
-            response  = {
-                "message" : "Query is not related to journal."
-            }
+        if not filter_params["is_related"] and not filter_params["is_history"]:
+            logger.info("Query is not realted to Journals")
+            response = {"message": "Query is not related to journal."}
             query_object = {"user_query": user_query.query, "response": response}
             history.append(query_object)
             dumped_history = json.dumps(history)
-            store_history(dumped_history, user['id'])
+            store_history(dumped_history, user["id"])
             return response
         if filter_params.get("is_history", False):
             logger.info("Processing history-only query")
@@ -133,7 +135,19 @@ def get_chat_history(request: Request):
             return []
         else:
             logger.info(f"Chatbot History is {history}")
-            return history
+            updatedHistory = []
+            for i in history:
+                user_entry = {"role": "user", "content": i["user_query"]}
+                assistant_entry = {
+                    "role": "assistant",
+                    "content": i["response"]["message"],
+                }
+
+                updatedHistory.append(user_entry)
+                updatedHistory.append(assistant_entry)
+
+                print(updatedHistory)
+            return updatedHistory
     except APIException as e:
         logger.exception(f"Unexpected error in getting chatbot history: {str(e)}")
         raise APIException(
