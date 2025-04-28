@@ -1,6 +1,6 @@
 from email import message
 from fastapi import APIRouter, Request, status, HTTPException
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from uuid import uuid4
 from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
@@ -131,10 +131,104 @@ async def save_draft(request: Request):
         logger.error(f"Custom APIException caught: {str(e.message)}")
         raise e  # Re-raise as-is
 
-    except Exception as e:
+    except APIException as e:
         logger.exception(f"Unexpected error in /test endpoint: {str(e)}")
         raise APIException(
             status_code=500,
             detail="Internal Server Error",
             message=f"An unexpected error occurred: {str(e)}",
         )
+    
+
+
+
+
+
+@router.get("/dashboard/analysis")
+async def get_user_analysis(request: Request):
+    try:
+        user = getattr(request.state, "user", None)
+        if not user:
+            return {"message": "User not authenticated.", "data": {}}
+
+        user_id = user['id']
+        query = db.from_("journals").select("*").eq("user_id", user_id)
+        journals = query.execute().data
+
+        if not journals:
+            return {"message": "No data available for analysis.", "data": {}}
+
+        # Journal count
+        journal_count = len(journals)
+
+        # Tag usage
+        tag_usage = {}
+        for journal in journals:
+            for tag in journal.get("tags", []):
+                tag_usage[tag] = tag_usage.get(tag, 0) + 1
+
+        # Prepare journal dates
+        journal_dates = []
+        for j in journals:
+            date_str = j.get("date") or j.get("created_at")
+            if date_str:
+                journal_dates.append(datetime.fromisoformat(date_str).date())
+
+        if not journal_dates:
+            return {"message": "No valid journal dates found.", "data": {}}
+
+        journal_dates.sort()
+        journal_dates_set = set(journal_dates)
+
+        # Calculate current streak
+        current_streak = 0
+        today = datetime.now().date()
+        check_date = today
+        while check_date in journal_dates_set:
+            current_streak += 1
+            check_date -= timedelta(days=1)
+
+        # Calculate longest streak
+        longest_streak = 1
+        temp_streak = 1
+        for i in range(1, len(journal_dates)):
+            if (journal_dates[i] - journal_dates[i-1]).days == 1:
+                temp_streak += 1
+            else:
+                temp_streak = 1
+            longest_streak = max(longest_streak, temp_streak)
+
+        # Daily moods aggregation
+        daily_moods = {}
+        all_mood_count = {}
+        for journal in journals:
+            date_str = journal.get("date") or journal.get("created_at")
+            if not date_str:
+                continue
+            date = datetime.fromisoformat(date_str).date().strftime("%Y-%m-%d")
+            moods = journal.get("moods", {})
+            
+            if date not in daily_moods:
+                daily_moods[date] = {}
+            
+            for mood, score in moods.items():
+                # Daily mood aggregation
+                daily_moods[date][mood] = daily_moods[date].get(mood, 0) + score
+                # All mood count aggregation
+                all_mood_count[mood] = all_mood_count.get(mood, 0) + 1  # +1 per occurrence
+
+        return {
+            "message": "User analysis data generated successfully.",
+            "data": {
+                "journal_count": journal_count,
+                "tag_usage": tag_usage,
+                "current_streak": current_streak,
+                "longest_streak": longest_streak,
+                "journal_dates": [d.strftime("%Y-%m-%d") for d in journal_dates],
+                "daily_moods": daily_moods,
+                "all_mood_count": all_mood_count
+            }
+        }
+
+    except Exception as e:
+        raise APIException(status_code=500, detail=str(e), message=str(e))
