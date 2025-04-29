@@ -79,3 +79,22 @@ def get_history(user_id: str):
             "An error occurred while retrieving the user's history.",
             detail=error_msg,
         )
+    
+
+def delete_data(user_id : str):
+    try:
+        result = redis_client.delete(user_id)
+        if result == 1:
+            logging.info(f"🗑️ History deleted successfully for user ID '{user_id}'.")
+        else:
+            logging.info(f"📭 No history found to delete for user ID '{user_id}'.")
+    except Exception as e:
+        error_msg = f"❌ Error deleting history from Redis for user ID '{user_id}': {str(e)}"
+        logging.error(error_msg)
+        raise APIException(
+            500,
+            "An error occurred while deleting the user's history.",
+            detail=error_msg,
+        )
+
+

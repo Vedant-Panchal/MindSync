@@ -15,7 +15,6 @@ import { api } from "@/lib/api-client";
 import { useQuery } from "@tanstack/react-query";
 import { useChatbotStore } from "@/stores/chatStore";
 import toast from "react-hot-toast";
-import { Loader } from "@/features/chatbot/loader";
 
 export const Route = createFileRoute("/(app)/app/chat")({
   component: RouteComponent,
@@ -33,8 +32,7 @@ export interface IMessage {
 }
 
 function RouteComponent() {
-  const { messages, setMessages, lastMessage, loading, setLastMessage } =
-    useChatbotStore();
+  const { messages, setMessages, lastMessage, loading } = useChatbotStore();
 
   const { data, isError, error } = useQuery({
     queryKey: ["chatHistory"],

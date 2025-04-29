@@ -26,10 +26,6 @@ export function ChatInputWithActions() {
     setLoading,
     loading,
   } = useChatbotStore();
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const streamIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const streamContentRef = useRef("");
   const {
     transcript,
     listening,
@@ -44,7 +40,7 @@ export function ChatInputWithActions() {
       return res as any;
     },
     onSuccess: (data) => {
-      const fullResponse = data.message.message || "No response received";
+      const fullResponse = data.message.message || data.message;
       const lastMessageObject: IMessage = {
         id: messages.length + 1,
         content: fullResponse,
@@ -143,7 +139,10 @@ export function ChatInputWithActions() {
       onSubmit={handleSubmit}
       className="w-full max-w-(--breakpoint-md)"
     >
-      <PromptInputTextarea placeholder="Ask me anything..." />
+      <PromptInputTextarea
+        placeholder="Ask me anything..."
+        disabled={loading}
+      />
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
         <PromptInputAction tooltip="Voice input">
           <Button
@@ -168,15 +167,14 @@ export function ChatInputWithActions() {
           </Button>
         </PromptInputAction>
         <PromptInputAction
-          tooltip={
-            isPending || isStreaming ? "Stop generation" : "Send message"
-          }
+          tooltip={isPending ? "Stop generation" : "Send message"}
         >
           <Button
             variant="default"
             size="icon"
             className="h-8 w-8 rounded-full"
             onClick={handleSubmit}
+            disabled={loading}
           >
             {isPending ? (
               <Square className="size-5 fill-current" />

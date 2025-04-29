@@ -600,7 +600,7 @@ def final_response(
             )
 
         chat = model.start_chat(history=transformed)
-        response = chat.send_message(prompt,stream = True)
+        response = chat.send_message(prompt, stream=True)
 
         full_response = ""
         for chunk in response:
@@ -609,7 +609,7 @@ def final_response(
                 full_response += part
 
         cleaned = re.sub(
-        r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
+            r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
         )
         parsed = json.loads(cleaned)
         logger.info(f"this is response : {full_response}")
@@ -624,3 +624,5 @@ def final_response(
         raise APIException(
             status_code=500, detail=str(e), message="Error generating final response"
         )
+
+

@@ -13,7 +13,7 @@ from fastapi.encoders import jsonable_encoder
 import json
 from loguru import logger
 
-from app.utils.otp_utils import get_history, store_draft, store_history, store_otp
+from app.utils.otp_utils import delete_data, get_history, store_draft, store_history, store_otp
 from app.utils.utils import submit_draft
 from app.utils.chatbot_utils import (
     final_response,
@@ -48,7 +48,7 @@ async def getQuery(request: Request, user_query: ChatbotType):
         llm_data = []
         if not filter_params["is_related"] and not filter_params["is_history"]:
             logger.info("Query is not realted to Journals")
-            response = {"message": "Query is not related to journal."}
+            response = {"message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"}
             query_object = {"user_query": user_query.query, "response": response}
             history.append(query_object)
             dumped_history = json.dumps(history)
@@ -153,3 +153,22 @@ def get_chat_history(request: Request):
         raise APIException(
             status_code=500, detail=str(e), message="An unexpected error occurred"
         )
+
+
+@router.delete("/remove-history")
+def remove_history(request: Request):
+    """
+    Endpoint to remove the chat history for the current user.
+    """
+    try:
+        user = getattr(request.state,'user',None)
+        delete_data(user['id'])
+    except APIException as e:
+        logger.exception(f"Error removing chat history: {str(e)}")
+        raise APIException(
+            status_code=500,
+            detail=str(e),
+            message="An unexpected error occurred while removing chat history"
+        )
+
+
