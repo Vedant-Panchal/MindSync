@@ -36,7 +36,7 @@ export default function Section2() {
           >
             <div className="lg:max-w-lg">
               <motion.h2
-                className="text-base/7 font-semibold text-pink-600"
+                className="text-primary text-base/7 font-semibold"
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
@@ -60,9 +60,10 @@ export default function Section2() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                Track your thoughts, emotions, and personal growth—all in one place. 
-                Our AI-powered journal analyzes your entries to provide meaningful insights 
-                and help you discover patterns in your thinking and behavior.
+                Track your thoughts, emotions, and personal growth—all in one
+                place. Our AI-powered journal analyzes your entries to provide
+                meaningful insights and help you discover patterns in your
+                thinking and behavior.
               </motion.p>
               <motion.dl
                 className="mt-10 max-w-xl space-y-8 text-base/7 text-gray-600 lg:max-w-none"
@@ -83,7 +84,7 @@ export default function Section2() {
                     <dt className="inline font-semibold text-gray-900">
                       <feature.icon
                         aria-hidden="true"
-                        className="absolute top-1 left-1 size-5 text-pink-600"
+                        className="text-primary absolute top-1 left-1 size-5"
                       />
                       {feature.name}
                     </dt>{" "}
@@ -102,7 +103,7 @@ export default function Section2() {
             src="/dashboard.png"
             width={1000}
             height={1800}
-            className="max-w-none rounded-xl object-fill shadow-xl ring-1 ring-gray-400/10 md:-ml-4 lg:-ml-0"
+            className="max-w-none rounded-xl object-fill ring-1 shadow-xl ring-gray-400/10 md:-ml-4 lg:-ml-0"
           />
         </div>
       </div>

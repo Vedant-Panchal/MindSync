@@ -52,7 +52,7 @@ GO_EMOTION_LABELS = [
     "neutral",
 ]
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash-latest", safety_settings=safety)
+model = genai.GenerativeModel("gemini-2.5-flash-preview-04-17", safety_settings=safety)
 
 
 today = datetime.today().strftime("%Y-%m-%d")
@@ -348,7 +348,7 @@ tools = [
     }
 ]
 
-model = genai.GenerativeModel("gemini-1.5-flash-latest", tools=tools)
+model = genai.GenerativeModel("gemini-2.5-flash-preview-04-17", tools=tools)
 
 
 def query_function(user_id: str, user_query: str, filter_parameters):
@@ -566,7 +566,7 @@ def final_response(
         """
 
     model = genai.GenerativeModel(
-        "gemini-1.5-flash-latest",
+        "gemini-2.5-flash-preview-04-17",
         safety_settings=[
             {
                 "category": "HARM_CATEGORY_HARASSMENT",

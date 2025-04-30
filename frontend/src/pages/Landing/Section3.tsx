@@ -86,7 +86,7 @@ export default function Section3() {
           transition={{ duration: 0.6 }}
         >
           <motion.h2
-            className="text-base/7 font-semibold text-pink-600"
+            className="text-primary text-base/7 font-semibold"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -134,7 +134,7 @@ export default function Section3() {
               >
                 <dt className="text-base/7 font-semibold text-gray-900">
                   <motion.div
-                    className="absolute top-0 left-0 flex size-10 items-center justify-center rounded-lg bg-pink-600"
+                    className="bg-primary absolute top-0 left-0 flex size-10 items-center justify-center rounded-lg"
                     variants={iconVariants}
                     whileHover="hover"
                   >

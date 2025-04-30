@@ -2,15 +2,19 @@ import { Link } from "@tanstack/react-router";
 
 function Footer() {
   return (
-    <div className="mx-auto border-t border-gray-200 mt-auto w-full max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto mt-auto w-full max-w-[85rem] border-t border-gray-200 px-4 py-10 sm:px-6 lg:px-8">
       <div className="text-center">
         <div>
           <Link
-            className="flex-none text-xl font-semibold text-black dark:text-white"
+            className="flex items-center text-xl font-semibold text-black dark:text-white"
             to="/"
             aria-label="Brand"
           >
-            <img src="./logo.png" alt="MindSync Logo" className="h-9 w-auto" />
+            <img
+              src="/apple-touch-icon.png"
+              alt="MindSync Logo"
+              className="h-9 w-9"
+            />
             MindSync
           </Link>
         </div>

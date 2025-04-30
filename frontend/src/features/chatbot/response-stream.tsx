@@ -344,6 +344,11 @@ function ResponseStream({
   `;
 
   const renderContent = () => {
+    useEffect(() => {
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, [displayedText, segments.length]);
+
+    const endRef = useRef<HTMLDivElement>(null);
     switch (mode) {
       case "typewriter":
         return <>{displayedText}</>;
@@ -375,6 +380,7 @@ function ResponseStream({
                   </span>
                 );
               })}
+              <div ref={endRef} className="h-24" />
             </div>
           </>
         );

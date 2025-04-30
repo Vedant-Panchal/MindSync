@@ -60,19 +60,23 @@ function RouteComponent() {
     if (lastMessage) {
       setMessages(lastMessage);
     }
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [lastMessage, setMessages]);
-
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-y-hidden">
+    <div className="relative flex h-full w-full flex-col items-center justify-start pt-0">
       <div className="absolute bottom-40 flex w-full translate-x-[-3%] items-center justify-center">
         <ScrollButton containerRef={chatContainerRef} scrollRef={bottomRef} />
       </div>
       <ChatContainer
-        className="scrollbar-hide h-full flex-1 space-y-4 p-4"
+        className="scrollbar-hide max-h-[80vh] w-[50vw] space-y-4 p-4"
         ref={chatContainerRef}
+        scrollToRef={bottomRef}
+        autoScroll={true}
       >
         {messages.map((message) => {
           const isAssistant = message.role === "assistant";
@@ -84,20 +88,13 @@ function RouteComponent() {
                 message.role === "user" ? "justify-end" : "justify-start"
               }
             >
-              {isAssistant && (
-                <MessageAvatar
-                  src="/avatars/ai.png"
-                  alt="AI Assistant"
-                  fallback="AI"
-                />
-              )}
-              <div className="max-w-[85%] sm:max-w-[75%]">
+              <div className="sm:max-w-[75%]">
                 {isAssistant ? (
-                  <div className="bg-secondary text-foreground prose rounded-lg p-2">
+                  <div className="text-foreground prose max-w-[85%] rounded-lg p-2 text-sm">
                     <Markdown>{message.content}</Markdown>
                   </div>
                 ) : (
-                  <MessageContent className="bg-primary text-primary-foreground p-2">
+                  <MessageContent className="bg-sidebar-accent text-sidebar-accent-foreground w-full p-2 text-sm">
                     {message.content}
                   </MessageContent>
                 )}
@@ -106,7 +103,7 @@ function RouteComponent() {
           );
         })}
         {loading && (
-          <div className="ml-10 h-full">
+          <div className="h-full">
             {/* @ts-ignore */}
             <l-mirage size="60" speed="2.5" color="#3981f6" />
           </div>
@@ -118,13 +115,6 @@ function RouteComponent() {
               lastMessage.role === "user" ? "justify-end" : "justify-start"
             }
           >
-            {lastMessage.role === "assistant" && (
-              <MessageAvatar
-                src="/avatars/ai.png"
-                alt="AI Assistant"
-                fallback="AI"
-              />
-            )}
             <div className="max-w-[85%] flex-1 sm:max-w-[75%]">
               <div className="text-foreground prose rounded-lg p-2">
                 <ResponseStream
@@ -138,8 +128,8 @@ function RouteComponent() {
             </div>
           </Message>
         )}
-        <div className="mt-28" ref={bottomRef} />
       </ChatContainer>
+      <div className="absolute bottom-0 h-1 w-full" ref={bottomRef} />
       <motion.div
         initial={{ opacity: 0, y: 20, filter: "blur(20px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
