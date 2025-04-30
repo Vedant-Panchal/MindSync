@@ -16,6 +16,7 @@ export interface MinimalTiptapProps
   onChange?: (value: Content) => void;
   className?: string;
   editorContentClassName?: string;
+  // editor : Editor | null
 }
 
 const Toolbar = ({ editor }: { editor: Editor }) => (

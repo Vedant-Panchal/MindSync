@@ -10,11 +10,15 @@ export const createJournal = z.object({
       message: "Please add at least one tag",
     }),
   plainText: z
+    .custom<string>()
+    .refine((value) => value !== undefined && value !== "", {
+      message: "Your journal can't be empty",
+    }),
+  richText: z
     .custom<Content>()
     .refine((value) => value !== undefined && value !== "", {
       message: "Your journal can't be empty",
     }),
-  richText: z.string().optional(),
 });
 
 export type JournalInput = z.infer<typeof createJournal>;

@@ -1,11 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import useEditorStore from "@/stores/editorStore";
 import { MinimalTiptapEditor } from "@/components/minimal-tiptap";
-import { useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { format, set } from "date-fns";
+import { format } from "date-fns";
 import { Controller, useForm } from "react-hook-form";
 import { createJournal, JournalInput } from "@/types/createJournal";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,13 +25,12 @@ import { Save, SquarePen } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import API_PATHS from "@/config/api-paths";
+
 export const Route = createFileRoute("/(app)/app/create")({
   component: RouteComponent,
 });
 
 const now = new Date();
-
-// Tomorrow at 12:00 AM
 const tomorrowMidnight = new Date(
   now.getFullYear(),
   now.getMonth(),
@@ -42,14 +39,12 @@ const tomorrowMidnight = new Date(
   0,
   0,
 );
-
-// Format it as: dd-MM-yyyy hh:mm a
 const tomorrowDate = format(tomorrowMidnight, "dd-MM-yyyy hh:mm a");
 
 function RouteComponent() {
   const {
-    content,
     richText,
+    plainText,
     setState,
     title,
     tags,
@@ -62,15 +57,17 @@ function RouteComponent() {
   const { mutate: addDraft, isPending: addingDraft } = useMutation({
     mutationKey: ["addDraft"],
     mutationFn: async (data: JournalInput) => {
+      console.log(DataTransferItemList);
       await api.post(API_PATHS.JOURNALS.ADD_DRAFT, data);
     },
     onSuccess: () => {
-      toast.success("Draft saved successfully");
+      toast.success("Journal Saved Successfully");
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
+
   const { mutate: addJournal, isPending: addingJournal } = useMutation({
     mutationKey: ["addJournal"],
     mutationFn: async (data: JournalInput) => {
@@ -78,34 +75,37 @@ function RouteComponent() {
     },
     onSuccess: () => {
       toast.success("Journal created successfully");
+      useEditorStore.getState().reset();
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
-  const { register, control, handleSubmit, formState } = useForm({
+
+  const { register, control, handleSubmit, formState, setValue } = useForm({
     resolver: zodResolver(createJournal),
     defaultValues: {
-      tags: tags, // use Zustand value or []
+      title: title || "",
+      tags: tags || [],
+      richText: richText || "",
+      plainText: plainText || "",
     },
-  });
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: content,
   });
 
   const currentDate = format(new Date(), "EEEE, MMMM d, yyyy");
+
   const onSubmit = (data: JournalInput) => {
     if (actionRef.current === "save") {
       addJournal(data);
     } else if (actionRef.current === "draft") {
       console.log(data);
-      // addDraft(data);
+      addDraft(data);
     } else {
       toast.error("No action specified");
     }
     actionRef.current = null;
   };
+
   const onError = (errors: typeof formState.errors) => {
     const firstError = Object.values(errors)[0];
     if (firstError?.message) {
@@ -131,8 +131,8 @@ function RouteComponent() {
             })}
           />
           <AlertDialog>
-            <AlertDialogTrigger className="flex items-center gap-2">
-              <Button variant="default" type="button">
+            <AlertDialogTrigger asChild className="flex items-center gap-2">
+              <Button variant="default" type="button" disabled={addingJournal}>
                 Save Journal <Save />
               </Button>
             </AlertDialogTrigger>
@@ -142,7 +142,7 @@ function RouteComponent() {
                   Are you sure?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
-                  You wont be able to submit another journal before{" "}
+                  You won't be able to submit another journal before{" "}
                   <span className="font-semibold">{tomorrowDate}</span>.
                 </AlertDialogDescription>
               </AlertDialogHeader>
@@ -151,7 +151,6 @@ function RouteComponent() {
                 <AlertDialogAction
                   onClick={() => {
                     actionRef.current = "save";
-                    // Submit the form manually
                     document.querySelector("form")?.requestSubmit();
                   }}
                 >
@@ -167,6 +166,7 @@ function RouteComponent() {
             onClick={() => {
               actionRef.current = "draft";
             }}
+            disabled={addingJournal}
           >
             Save Draft <SquarePen />
           </Button>
@@ -191,19 +191,30 @@ function RouteComponent() {
             />
           )}
         />
-
         <Controller
-          name="content"
+          name="richText"
           control={control}
           render={({ field: { onChange, value } }) => (
             <MinimalTiptapEditor
-              value={value}
-              className="h-full w-full shadow-none"
+              value={value || richText}
+              onChange={(newContent) => {
+                const html = newContent;
+
+                const text = newContent
+                  ? new DOMParser().parseFromString(
+                      newContent as any,
+                      "text/html",
+                    ).body.textContent || ""
+                  : "";
+                onChange(html);
+                setValue("plainText", text);
+                setState({ richText: html, plainText: text });
+              }}
+              className="h-full w-full overflow-auto rounded-md border shadow-sm"
               editorContentClassName="p-5"
-              placeholder="What's on your mind today ?..."
+              placeholder="What's on your mind today?..."
               editable={true}
               editorClassName="focus:outline-none"
-              content={content}
               output="html"
             />
           )}
@@ -212,3 +223,5 @@ function RouteComponent() {
     </div>
   );
 }
+
+export default RouteComponent;
