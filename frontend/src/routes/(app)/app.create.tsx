@@ -21,10 +21,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Save, SquarePen } from "lucide-react";
+import { Loader2, Save, SquarePen } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import API_PATHS from "@/config/api-paths";
+import { useAuthStore } from "@/stores/authStore";
 
 export const Route = createFileRoute("/(app)/app/create")({
   component: RouteComponent,
@@ -53,15 +54,15 @@ function RouteComponent() {
     setTags,
   } = useEditorStore();
   const actionRef = useRef<"save" | "draft" | null>(null);
-
+  const lastSubmitted = useAuthStore((state) => state.user?.lastSubmitted);
   const { mutate: addDraft, isPending: addingDraft } = useMutation({
     mutationKey: ["addDraft"],
     mutationFn: async (data: JournalInput) => {
-      console.log(DataTransferItemList);
+      // console.log(data);
       await api.post(API_PATHS.JOURNALS.ADD_DRAFT, data);
     },
     onSuccess: () => {
-      toast.success("Journal Saved Successfully");
+      toast.success("Draft saved Successfully");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -71,11 +72,17 @@ function RouteComponent() {
   const { mutate: addJournal, isPending: addingJournal } = useMutation({
     mutationKey: ["addJournal"],
     mutationFn: async (data: JournalInput) => {
+      await api.post(API_PATHS.JOURNALS.ADD_DRAFT, data);
       await api.post(API_PATHS.JOURNALS.SUBMIT, data);
     },
     onSuccess: () => {
       toast.success("Journal created successfully");
       useEditorStore.getState().reset();
+      setValue("title", "");
+      setValue("tags", []);
+      setValue("rich_text", "");
+      setValue("plain_text", "");
+      window.location.reload();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -87,8 +94,8 @@ function RouteComponent() {
     defaultValues: {
       title: title || "",
       tags: tags || [],
-      richText: richText || "",
-      plainText: plainText || "",
+      rich_text: richText || "",
+      plain_text: plainText || "",
     },
   });
 
@@ -130,46 +137,78 @@ function RouteComponent() {
               onChange: (e) => setState({ title: e.target.value }),
             })}
           />
-          <AlertDialog>
-            <AlertDialogTrigger asChild className="flex items-center gap-2">
-              <Button variant="default" type="button" disabled={addingJournal}>
-                Save Journal <Save />
+          {lastSubmitted &&
+          format(new Date(lastSubmitted), "yyyy-MM-dd") ===
+            format(new Date(), "yyyy-MM-dd") ? (
+            <p className="w-full text-right text-xs text-gray-400">
+              You have already submitted a journal today
+            </p>
+          ) : (
+            <>
+              <AlertDialog>
+                <AlertDialogTrigger asChild className="flex items-center gap-2">
+                  <Button
+                    variant="default"
+                    type="button"
+                    disabled={addingJournal}
+                  >
+                    {addingJournal ? (
+                      <span className="flex items-center gap-2">
+                        Submitting
+                        <Loader2 className="animate-spin" />{" "}
+                      </span>
+                    ) : (
+                      <span className="flex gap-2">
+                        Save Journal <Save />
+                      </span>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="font-semibold">
+                      Are you sure?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You won't be able to submit another journal before{" "}
+                      <span className="font-semibold">{tomorrowDate}</span>.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        actionRef.current = "save";
+                        document.querySelector("form")?.requestSubmit();
+                      }}
+                    >
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button
+                type="submit"
+                variant="secondary"
+                className="ml-2 flex items-center"
+                onClick={() => {
+                  actionRef.current = "draft";
+                }}
+                disabled={addingJournal || addingDraft}
+              >
+                {addingDraft ? (
+                  <span className="flex items-center gap-2">
+                    Saving
+                    <Loader2 className="animate-spin" />{" "}
+                  </span>
+                ) : (
+                  <>
+                    Save Draft <SquarePen />
+                  </>
+                )}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="font-semibold">
-                  Are you sure?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  You won't be able to submit another journal before{" "}
-                  <span className="font-semibold">{tomorrowDate}</span>.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    actionRef.current = "save";
-                    document.querySelector("form")?.requestSubmit();
-                  }}
-                >
-                  Continue
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <Button
-            type="submit"
-            variant="secondary"
-            className="ml-2 flex items-center"
-            onClick={() => {
-              actionRef.current = "draft";
-            }}
-            disabled={addingJournal}
-          >
-            Save Draft <SquarePen />
-          </Button>
+            </>
+          )}
         </section>
         <p className="text-xs text-gray-400">{currentDate}</p>
         <Controller
@@ -192,7 +231,7 @@ function RouteComponent() {
           )}
         />
         <Controller
-          name="richText"
+          name="rich_text"
           control={control}
           render={({ field: { onChange, value } }) => (
             <MinimalTiptapEditor
@@ -207,7 +246,7 @@ function RouteComponent() {
                     ).body.textContent || ""
                   : "";
                 onChange(html);
-                setValue("plainText", text);
+                setValue("plain_text", text);
                 setState({ richText: html, plainText: text });
               }}
               className="h-full w-full overflow-auto rounded-md border shadow-sm"

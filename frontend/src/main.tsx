@@ -37,8 +37,17 @@ const preloadUser = async () => {
 
   try {
     const user: User = await api.get(API_PATHS.AUTH.GET_ME);
+    const lastSubmitted: { last_submission_date: string } = await api.get(
+      API_PATHS.JOURNALS.LAST_SUBMITTED,
+    );
     console.log("User fetched:", user); // Debug log
-    useAuthStore.setState({ user });
+    console.log("User fetched:", lastSubmitted); // Debug log
+    useAuthStore.setState({
+      user: {
+        ...user,
+        lastSubmitted: lastSubmitted.last_submission_date,
+      },
+    });
   } catch (error) {
     console.error("Failed to fetch user:", error); // Debug log
     useAuthStore.setState({ user: null });

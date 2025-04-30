@@ -15,6 +15,7 @@ const API_PATHS = {
     ADD_DRAFT: `/api/v1/journals/draft/add`,
     SUBMIT: `/api/v1/journals/draft/submit`,
     GET_ALL: `/api/v1/journals/`,
+    LAST_SUBMITTED: `/api/v1/journals/last-submission-date`,
   },
 };
 

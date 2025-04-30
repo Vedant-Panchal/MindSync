@@ -81,11 +81,12 @@ async def save_drafts(request: Request, draft: DraftRequest):
     try:
         today = date.today().isoformat()
         redis_key = f"Draft:{user['id']}:{today}"
+        tags = [item["text"] for item in draft.tags]
         draft_data = {
-            "content": draft.content,
+            "content": draft.plain_text,
             "date": today,
             "user_id": user["id"],
-            "tags": draft.tags,
+            "tags": tags,
             "title": draft.title,
             "rich_text": draft.rich_text,
         }
@@ -236,3 +237,43 @@ async def get_user_analysis(request: Request):
 
     except Exception as e:
         raise APIException(status_code=500, detail=str(e), message=str(e))
+
+
+@router.get("/last-submission-date")
+def get_last_submission_date(request: Request):
+    """
+    Endpoint to get the last submission date of a journal.
+    """
+    user = getattr(request.state, "user", None)
+    try:
+        # Query the database for the latest journal entry by the user
+        last_journal = (
+            db.table("journals")
+            .select("created_at")
+            .eq("user_id", user["id"])
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+
+        if not last_journal.data or len(last_journal.data) == 0:
+            return {
+                "message": "No journal submissions found.",
+                "last_submission_date": None,
+            }
+
+        # Extract the last submission date
+        last_submission_date = last_journal.data[0]["created_at"]
+
+        return {
+            "message": "Last submission date retrieved successfully.",
+            "last_submission_date": last_submission_date,
+        }
+
+    except Exception as e:
+        logger.exception(f"Error retrieving last submission date: {str(e)}")
+        raise APIException(
+            status_code=500,
+            detail=str(e),
+            message="An error occurred while retrieving the last submission date.",
+        )

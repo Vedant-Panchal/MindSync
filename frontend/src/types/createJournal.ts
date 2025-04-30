@@ -9,12 +9,12 @@ export const createJournal = z.object({
     .refine((value) => Array.isArray(value) && value.length > 0, {
       message: "Please add at least one tag",
     }),
-  plainText: z
+  plain_text: z
     .custom<string>()
     .refine((value) => value !== undefined && value !== "", {
       message: "Your journal can't be empty",
     }),
-  richText: z
+  rich_text: z
     .custom<Content>()
     .refine((value) => value !== undefined && value !== "", {
       message: "Your journal can't be empty",

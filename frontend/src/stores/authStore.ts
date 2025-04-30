@@ -6,6 +6,7 @@ export interface User {
   email: string;
   username: string;
   exp: number;
+  lastSubmitted: string;
   avatar?: string;
 }
 

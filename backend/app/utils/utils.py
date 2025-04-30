@@ -131,6 +131,7 @@ def submit_draft(user_id: str):
                 section_number += 1
                 id = insert_journal_section(section_data, db)
                 logger.info(f"✅ Processed draft for {today} and stored in Supabase")
+            redis_client.delete(f"Draft:{user_id}:{today_key}")
             return user_id
 
         except ValueError as ve:
@@ -232,7 +233,6 @@ def aggregate_journal(
         "id": journal_id,
         "user_id": user_id,
         "content": aggregated_content,
-        "date": date,  # YYYY-MM-DD
         "moods": journal_moods,
         "tags": {},  # Optional, can expand later
         "embedding": combine_embedding,

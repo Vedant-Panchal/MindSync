@@ -5,8 +5,8 @@ from typing import Optional, Dict, List
 
 
 class DraftRequest(BaseModel):
-    content: str
-    tags: list
+    plain_text: str
+    tags: List[Dict[str, str]]
     title: str
     rich_text: str
 
@@ -30,7 +30,6 @@ class Journal(BaseModel):
     id: UUID
     user_id: UUID
     content: str
-    date: date
     moods: Optional[Dict] = None
     tags: list
     embedding: Optional[List[float]] = (None,)

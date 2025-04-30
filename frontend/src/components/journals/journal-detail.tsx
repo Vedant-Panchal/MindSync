@@ -1,5 +1,3 @@
-"use client";
-
 import type { JournalEntry } from "@/features/journals/types";
 import { getEntryColor } from "@/features/journals/types";
 import {
