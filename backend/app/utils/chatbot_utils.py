@@ -624,5 +624,3 @@ def final_response(
         raise APIException(
             status_code=500, detail=str(e), message="Error generating final response"
         )
-
-
