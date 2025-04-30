@@ -1,7 +1,10 @@
 from email import message
+from urllib import response
 from fastapi import APIRouter, Request, status, HTTPException
 from datetime import date, datetime, timedelta
 from uuid import uuid4
+
+from sklearn.utils import resample
 from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
 from app.db.schemas.journal import ChatbotType, DraftRequest
@@ -49,14 +52,17 @@ def get_all_journal(request: Request):
 
             # Prepare data
             data_obj = {
-                "content": journal.get("content", ""),
-                "date": formatted_date,
-                "moods": journal.get("moods", {}),
+                "id": journal.get("id", ""),
                 "title": journal.get("title", ""),
+                "content": journal.get("content", ""),
+                "rich_text": journal.get("rich_text", ""),
+                "date": formatted_date,
+                "moods": journal.get("moods", []),
+                "tags": journal.get("tags", []),
+                "created_at": journal.get("created_at", ""),
             }
             data.append(data_obj)
-
-        return {"journals": data}
+        return data
     except APIException as e:
         logger.exception(f"Unexpected error in getting all journals: {str(e)}")
         raise APIException(
