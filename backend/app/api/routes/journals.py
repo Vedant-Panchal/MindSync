@@ -28,14 +28,16 @@ router = APIRouter()
 
 
 @router.get("/get")
-def get_all_journal(request: Request,range: Optional[DateRange] = None):
+def get_all_journal(request: Request, range: Optional[DateRange] = None):
     try:
         user = getattr(request.state, "user", None)
-        if(range and  range.start_date and range.end_date):
-            response = get_journals_by_date(user["id"], range.start_date, range.end_date)
-        elif(range and range.start_date and not range.end_date):
+        if range and range.start_date and range.end_date:
+            response = get_journals_by_date(
+                user["id"], range.start_date, range.end_date
+            )
+        elif range and range.start_date and not range.end_date:
             response = get_journals_by_date(user["id"], range.start_date)
-        elif(range and range.end_date and not range.start_date):
+        elif range and range.end_date and not range.start_date:
             response = get_journals_by_date(user["id"], end_date=range.end_date)
         else:
             response = get_journals_by_date(user["id"])
