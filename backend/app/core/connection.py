@@ -20,4 +20,4 @@ if redis_client.ping():
 
 genai.configure(api_key=GEMINI_KEY)
 
-model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest")
+model = genai.GenerativeModel(model_name="gemini-2.5-flash-preview-04-17")

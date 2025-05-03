@@ -1,4 +1,7 @@
 from email import message
+from tracemalloc import start
+from turtle import st
+from typing import Optional
 from urllib import response
 from fastapi import APIRouter, Request, status, HTTPException
 from datetime import date, datetime, timedelta
@@ -7,7 +10,7 @@ from uuid import uuid4
 from sklearn.utils import resample
 from app.core.config import MODEL_VECTOR
 from app.core.exceptions import APIException
-from app.db.schemas.journal import ChatbotType, DraftRequest
+from app.db.schemas.journal import ChatbotType, DateRange, DraftRequest
 from app.core.connection import db
 from fastapi.encoders import jsonable_encoder
 from loguru import logger
@@ -25,10 +28,17 @@ router = APIRouter()
 
 
 @router.get("/get")
-def get_all_journal(request: Request):
+def get_all_journal(request: Request,range: Optional[DateRange] = None):
     try:
         user = getattr(request.state, "user", None)
-        response = get_journals_by_date(user["id"])
+        if(range and  range.start_date and range.end_date):
+            response = get_journals_by_date(user["id"], range.start_date, range.end_date)
+        elif(range and range.start_date and not range.end_date):
+            response = get_journals_by_date(user["id"], range.start_date)
+        elif(range and range.end_date and not range.start_date):
+            response = get_journals_by_date(user["id"], end_date=range.end_date)
+        else:
+            response = get_journals_by_date(user["id"])
 
         if not response or not response[0]:
             raise APIException(

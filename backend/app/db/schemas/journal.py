@@ -59,3 +59,7 @@ class JournalSection(BaseModel):
 
 class ChatbotType(BaseModel):
     query: str
+
+class DateRange(BaseModel):
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
