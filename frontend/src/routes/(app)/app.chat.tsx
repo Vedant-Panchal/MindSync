@@ -39,6 +39,7 @@ function RouteComponent() {
     queryFn: getChatHistory,
   });
 
+  console.log("chat data ", data);
   if (isError) {
     toast.error(error.message);
     return <div>Error loading chat history. Please try again.</div>;
@@ -73,7 +74,7 @@ function RouteComponent() {
         <ScrollButton containerRef={chatContainerRef} scrollRef={bottomRef} />
       </div>
       <ChatContainer
-        className="scrollbar-hide max-h-[80vh] w-[50vw] space-y-4 p-4"
+        className="scrollbar-hide mb-10 h-[80vh] max-h-[80vh] w-[50vw] space-y-4 px-4 py-6"
         ref={chatContainerRef}
         scrollToRef={bottomRef}
         autoScroll={true}

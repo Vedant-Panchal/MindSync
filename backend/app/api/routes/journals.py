@@ -28,27 +28,23 @@ router = APIRouter()
 
 
 @router.get("/get")
-def get_all_journal(request: Request, range: Optional[DateRange] = None):
+def get_all_journal(request: Request,start_date: Optional[date] = None, end_date: Optional[date] = None):
     try:
         user = getattr(request.state, "user", None)
-        if range and range.start_date and range.end_date:
+        if start_date and end_date:
             response = get_journals_by_date(
-                user["id"], range.start_date, range.end_date
+                user["id"], start_date, end_date
             )
-        elif range and range.start_date and not range.end_date:
-            response = get_journals_by_date(user["id"], range.start_date)
-        elif range and range.end_date and not range.start_date:
-            response = get_journals_by_date(user["id"], end_date=range.end_date)
+        elif start_date and not end_date:
+            print(start_date)
+            response = get_journals_by_date(user["id"], start_date)
+        elif end_date and not start_date:
+            response = get_journals_by_date(user["id"], end_date=end_date)
         else:
             response = get_journals_by_date(user["id"])
 
         if not response or not response[0]:
-            raise APIException(
-                status_code=404,
-                message="There are no journals written.",
-                detail="Journals not found",
-                hint="Please write a journal to see the list.",
-            )
+           return []
 
         journals = response
         data = []
@@ -78,7 +74,7 @@ def get_all_journal(request: Request, range: Optional[DateRange] = None):
     except APIException as e:
         logger.exception(f"Unexpected error in getting all journals: {str(e)}")
         raise APIException(
-            status_code=500,
+            status_code=400,
             detail=str(e.detail),
             message=str(e.message),
             hint=str(e.hint),
@@ -181,8 +177,8 @@ async def get_user_analysis(request: Request):
         for journal in journals:
             for tag in journal.get("tags", []):
                 tag_usage[tag] = tag_usage.get(tag, 0) + 1
+        top_tags = dict(sorted(tag_usage.items(), key=lambda item: item[1], reverse=True)[:5])
 
-        # Prepare journal dates
         journal_dates = []
         for j in journals:
             date_str = j.get("date") or j.get("created_at")
@@ -213,8 +209,7 @@ async def get_user_analysis(request: Request):
                 temp_streak = 1
             longest_streak = max(longest_streak, temp_streak)
 
-        # Daily moods aggregation
-        daily_moods = {}
+        daily_mood = {}
         all_mood_count = {}
         for journal in journals:
             date_str = journal.get("date") or journal.get("created_at")
@@ -223,27 +218,28 @@ async def get_user_analysis(request: Request):
             date = datetime.fromisoformat(date_str).date().strftime("%Y-%m-%d")
             moods = journal.get("moods", {})
 
-            if date not in daily_moods:
-                daily_moods[date] = {}
+            if date not in daily_mood:
+                daily_mood[date] = {}
 
             for mood, score in moods.items():
-                # Daily mood aggregation
-                daily_moods[date][mood] = daily_moods[date].get(mood, 0) + score
-                # All mood count aggregation
-                all_mood_count[mood] = (
-                    all_mood_count.get(mood, 0) + 1
-                )  # +1 per occurrence
+            # Daily mood aggregation
+                daily_mood[date][mood] = daily_mood[date].get(mood, 0) + score
+            # All mood count aggregation
+            all_mood_count[mood] = all_mood_count.get(mood, 0) + 1
+        
+        # Get top 5 moods by count
+        top_five_moods = dict(sorted(all_mood_count.items(), key=lambda item: item[1], reverse=True)[:5])
 
         return {
             "message": "User analysis data generated successfully.",
             "data": {
                 "journal_count": journal_count,
-                "tag_usage": tag_usage,
+                "tag_usage": top_tags,
                 "current_streak": current_streak,
                 "longest_streak": longest_streak,
                 "journal_dates": [d.strftime("%Y-%m-%d") for d in journal_dates],
-                "daily_moods": daily_moods,
-                "all_mood_count": all_mood_count,
+                "daily_moods": daily_mood,
+                "all_mood_count": top_five_moods,
             },
         }
 
