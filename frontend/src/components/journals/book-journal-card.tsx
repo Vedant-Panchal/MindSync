@@ -81,7 +81,7 @@ export default function BookJournalCard({
             <div className="flex flex-wrap justify-end gap-1">
               {Object.entries(entry.moods)
                 .slice(0, 3)
-                .map(([mood, score], index) => (
+                .map(([mood, _], index) => (
                   <div
                     key={index}
                     className="bg-opacity-70 rounded-full bg-white px-2 py-1 text-xs"
@@ -159,7 +159,7 @@ export default function BookJournalCard({
             <div className="flex flex-wrap justify-end gap-1">
               {Object.entries(entry.moods)
                 .slice(0, 3)
-                .map(([mood, score], index) => (
+                .map(([mood, _], index) => (
                   <div
                     key={index}
                     className="bg-opacity-20 rounded-full px-2 py-1 text-xs"
