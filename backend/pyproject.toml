@@ -1,44 +1,40 @@
-[project]
+[tool.poetry]
 name = "app"
 version = "1.1.0"
 description = ""
-authors = [
-    {name = "Vedant Panchal",email = "VEDANTPANCHAL.ict22@adaniuni.ac.in"}
-]
+authors = ["Vedant Panchal <VEDANTPANCHAL.ict22@adaniuni.ac.in>"]
 readme = "README.md"
-requires-python = "^3.11"
-dependencies = [
-    "fastapi (>=0.115.8,<0.116.0)",
-    "uvicorn (>=0.34.0,<0.35.0)",
-    "python-jose (>=3.3.0,<4.0.0)",
-    "passlib[bcrypt] (>=1.7.4,<2.0.0)",
-    "supabase (>=2.13.0,<3.0.0)",
-    "python-dotenv (>=1.0.1,<2.0.0)",
-    "pydantic[email] (>=2.10.6,<3.0.0)",
-    "requests (>=2.32.3,<3.0.0)",
-    "cryptography (>=44.0.0,<45.0.0)",
-    "redis (>=5.2.1,<6.0.0)",
-    "loguru (>=0.7.3,<0.8.0)",
-    "authlib (>=1.4.1,<2.0.0)",
-    "itsdangerous (>=2.2.0,<3.0.0)",
-    "sentence-transformers (>=3.4.1,<4.0.0)",
-    "torch (>=2.6.0,<3.0.0)",
-    "nltk (>=3.9.1,<4.0.0)",
-    "apscheduler (>=3.11.0,<4.0.0)",
-    "langchain (>=0.3.19,<0.4.0)",
-    "langchain-huggingface (>=0.1.2,<0.2.0)",
-    "transformers (>=4.49.0,<5.0.0)",
-    "dateparser (>=1.2.1,<2.0.0)",
-    "google-generativeai (>=0.8.4,<0.9.0)"
-]
 
+[tool.poetry.dependencies]
+fastapi = ">=0.115.8,<0.116.0"
+uvicorn = ">=0.34.0,<0.35.0"
+python-jose = ">=3.3.0,<4.0.0"
+passlib = {extras = ["bcrypt"], version = ">=1.7.4,<2.0.0"}
+supabase = ">=2.13.0,<3.0.0"
+python-dotenv = ">=1.0.1,<2.0.0"
+pydantic = {extras = ["email"], version = ">=2.10.6,<3.0.0"}
+requests = ">=2.32.3,<3.0.0"
+cryptography = ">=44.0.0,<45.0.0"
+redis = ">=5.2.1,<6.0.0"
+loguru = ">=0.7.3,<0.8.0"
+authlib = ">=1.4.1,<2.0.0"
+itsdangerous = ">=2.2.0,<3.0.0"
+sentence-transformers = ">=3.4.1,<4.0.0"
+torch = ">=2.6.0,<3.0.0"
+nltk = ">=3.9.1,<4.0.0"
+apscheduler = ">=3.11.0,<4.0.0"
+langchain = ">=0.3.19,<0.4.0"
+langchain-huggingface = ">=0.1.2,<0.2.0"
+transformers = ">=4.49.0,<5.0.0"
+dateparser = ">=1.2.1,<2.0.0"
+google-generativeai = ">=0.8.4,<0.9.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
 
 [tool.black]
 line-length = 88

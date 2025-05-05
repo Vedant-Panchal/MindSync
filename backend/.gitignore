@@ -2,4 +2,7 @@
 .venv*
 .env
 .env*
+/dist
+/build
+./dist
 **/__pycache__/
