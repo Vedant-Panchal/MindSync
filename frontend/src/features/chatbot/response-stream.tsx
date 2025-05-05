@@ -116,7 +116,7 @@ function useTextStream({
         const segmentIterator = segmenter.segment(text);
         const newSegments = Array.from(segmentIterator).map(
           (segment, index) => ({
-            text: segment.segment,
+            text: (segment as { segment: string }).segment,
             index,
           }),
         );

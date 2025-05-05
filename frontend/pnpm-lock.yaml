@@ -167,6 +167,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^2.11.7
         version: 2.11.7
+      '@types/intl':
+        specifier: ^1.2.2
+        version: 1.2.2
       axios:
         specifier: ^1.7.9
         version: 1.7.9
@@ -2634,6 +2637,9 @@ packages:
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
+
+  '@types/intl@1.2.2':
+    resolution: {integrity: sha512-A4g5UEAA9c56JWKhc4LSJ9vzDMztjxVXDAXtVK4EbS3hW1V7Sz05VfcTgDQIvkOYJp1NqH222eg62P72HwltfQ==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -6777,6 +6783,8 @@ snapshots:
   '@types/hast@3.0.4':
     dependencies:
       '@types/unist': 3.0.3
+
+  '@types/intl@1.2.2': {}
 
   '@types/json-schema@7.0.15': {}
 

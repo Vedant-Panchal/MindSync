@@ -17,7 +17,7 @@ import { api } from "@/lib/api-client";
 import { toast } from "sonner";
 import { motion } from "motion/react";
 import { Spinner } from "@/components/ui/spinner";
-import { ChartPie } from "@/components/ui/pie-chart";
+import { ChartDataItem, ChartPie } from "@/components/ui/pie-chart";
 
 export const Route = createFileRoute("/(app)/app/dashboard")({
   component: RouteComponent,
@@ -83,7 +83,7 @@ function RouteComponent() {
   }
 
   const chartData = data.all_mood_count;
-  const chartDataList = chartData
+  const chartDataList: any[] = chartData
     ? Object.entries(chartData).map(([mood, count]) => ({
         mood,
         count,

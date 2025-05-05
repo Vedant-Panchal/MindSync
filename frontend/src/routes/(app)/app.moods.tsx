@@ -149,7 +149,10 @@ const BarChartComponent = ({ data, formatDate }) => (
       <XAxis dataKey="date" tickFormatter={formatDate} />
       <YAxis />
       <Tooltip
-        formatter={(value) => [(value * 100).toFixed(1) + "%", "Intensity"]}
+        formatter={(value: number) => [
+          (value * 100).toFixed(1) + "%",
+          "Intensity",
+        ]}
       />
       <Legend />
       <Bar dataKey="neutral" fill="#8884D8" />
@@ -194,7 +197,7 @@ const RecentJournals = ({ journal_dates, daily_moods, formatDate }) => (
           </div>
           <div className="flex gap-1">
             {Object.entries(daily_moods[date])
-              .sort((a, b) => b[1] - a[1])
+              .sort((a, b) => Number(b[1]) - Number(a[1]))
               .slice(0, 2)
               .map(([mood], i) => (
                 <Badge key={i} variant="outline" className="capitalize">

@@ -66,6 +66,7 @@
     "@tiptap/pm": "^2.11.7",
     "@tiptap/react": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
+    "@types/intl": "^1.2.2",
     "axios": "^1.7.9",
     "chart.js": "^4.4.9",
     "class-variance-authority": "^0.7.1",
