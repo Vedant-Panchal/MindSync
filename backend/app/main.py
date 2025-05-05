@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
@@ -22,8 +23,22 @@ origins = [
     "http://localhost:5173",
     "http://localhost:8000",
 ]
-app = FastAPI()
+APP_ENV = os.environ.get("APP_ENV", "development")
 
+if APP_ENV == "production":
+    docs_url = None
+    redoc_url = None
+    openapi_url = None
+else:
+    docs_url = "/docs"
+    redoc_url = "/redoc"
+    openapi_url = "/openapi.json"
+
+app = FastAPI(
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    openapi_url=openapi_url
+)
 
 app.add_middleware(
     CORSMiddleware,

@@ -15,7 +15,7 @@ import { api } from "@/lib/api-client";
 import JournalCards from "./journal-card";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 
 export function DatePickerWithRange({
   className,

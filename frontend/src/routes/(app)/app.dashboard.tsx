@@ -15,7 +15,7 @@ import { TagUsageChart } from "@/components/ui/tag-usage-charts";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Spinner } from "@/components/ui/spinner";
 import { ChartPie } from "@/components/ui/pie-chart";
 
