@@ -28,13 +28,13 @@ router = APIRouter()
 
 
 @router.get("/get")
-def get_all_journal(request: Request,start_date: Optional[date] = None, end_date: Optional[date] = None):
+def get_all_journal(
+    request: Request, start_date: Optional[date] = None, end_date: Optional[date] = None
+):
     try:
         user = getattr(request.state, "user", None)
         if start_date and end_date:
-            response = get_journals_by_date(
-                user["id"], start_date, end_date
-            )
+            response = get_journals_by_date(user["id"], start_date, end_date)
         elif start_date and not end_date:
             print(start_date)
             response = get_journals_by_date(user["id"], start_date)
@@ -44,7 +44,7 @@ def get_all_journal(request: Request,start_date: Optional[date] = None, end_date
             response = get_journals_by_date(user["id"])
 
         if not response or not response[0]:
-           return []
+            return []
 
         journals = response
         data = []
@@ -177,7 +177,9 @@ async def get_user_analysis(request: Request):
         for journal in journals:
             for tag in journal.get("tags", []):
                 tag_usage[tag] = tag_usage.get(tag, 0) + 1
-        top_tags = dict(sorted(tag_usage.items(), key=lambda item: item[1], reverse=True)[:5])
+        top_tags = dict(
+            sorted(tag_usage.items(), key=lambda item: item[1], reverse=True)[:5]
+        )
 
         journal_dates = []
         for j in journals:
@@ -222,13 +224,15 @@ async def get_user_analysis(request: Request):
                 daily_mood[date] = {}
 
             for mood, score in moods.items():
-            # Daily mood aggregation
+                # Daily mood aggregation
                 daily_mood[date][mood] = daily_mood[date].get(mood, 0) + score
             # All mood count aggregation
             all_mood_count[mood] = all_mood_count.get(mood, 0) + 1
-        
+
         # Get top 5 moods by count
-        top_five_moods = dict(sorted(all_mood_count.items(), key=lambda item: item[1], reverse=True)[:5])
+        top_five_moods = dict(
+            sorted(all_mood_count.items(), key=lambda item: item[1], reverse=True)[:5]
+        )
 
         return {
             "message": "User analysis data generated successfully.",

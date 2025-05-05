@@ -34,11 +34,7 @@ else:
     redoc_url = "/redoc"
     openapi_url = "/openapi.json"
 
-app = FastAPI(
-    docs_url=docs_url,
-    redoc_url=redoc_url,
-    openapi_url=openapi_url
-)
+app = FastAPI(docs_url=docs_url, redoc_url=redoc_url, openapi_url=openapi_url)
 
 app.add_middleware(
     CORSMiddleware,
