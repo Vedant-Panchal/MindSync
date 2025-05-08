@@ -8,10 +8,8 @@ export const Route = createFileRoute("/(app)/app/calendar")({
 
 function RouteComponent() {
   return (
-    <div className="h-full w-full bg-white p-5">
-      <div className="mb-3">
-        <JournalsPage />
-      </div>
+    <div className="flex-1 overflow-auto bg-white sm:p-4">
+      <JournalsPage />
     </div>
   );
 }

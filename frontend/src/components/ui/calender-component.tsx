@@ -74,7 +74,7 @@ export default function CalendarJournal() {
     const res = await api.get("/api/v1/journals/dashboard/analysis", {
       params: { start_date: startDate || null, end_date: endDate || null },
     });
-    return res as any;
+    return res.data as any;
   };
 
   const {
@@ -100,10 +100,10 @@ export default function CalendarJournal() {
     toast.error(analysisError.message);
   }
   return (
-    <div className="bg-background h-full w-full p-4 md:p-4">
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+    <>
+      <div className="grid h-max grid-cols-1 gap-2 overflow-x-hidden p-5 md:grid-cols-2">
         {/* Calendar section */}
-        <div className="bg-card rounded-lg border p-4 shadow-sm">
+        <div className="bg-card rounded-lg border p-3 shadow-sm">
           <h2 className="text-card-foreground mb-4 text-xl font-semibold">
             Select Date Range
           </h2>
@@ -137,18 +137,18 @@ export default function CalendarJournal() {
           </div>
         </div>
         {isLoading ? (
-          <div className="bg-background flex h-full w-full items-center justify-center">
+          <div className="bg-background flex items-center justify-center rounded-lg border shadow-sm">
             <Spinner />
           </div>
         ) : (
-          <div className="bg-card rounded-lg border p-4 shadow-sm">
+          <div className="bg-card rounded-lg border p-3 shadow-sm">
             <h2 className="text-card-foreground mb-4 text-xl font-semibold">
               Journal Entries
             </h2>
 
             {data?.length > 0 ? (
-              <div className="relative">
-                <div className="overflow-x-hidden p-5">
+              <div className="relative w-full overflow-x-hidden">
+                <div className="p-5">
                   <div
                     className="flex h-full w-full gap-2 transition-transform duration-300 ease-in-out"
                     style={{
@@ -215,9 +215,8 @@ export default function CalendarJournal() {
             )}
           </div>
         )}
-      </div>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="border shadow-sm">
+        {/* <div className="grid h-max gap-6 p-5 md:grid-cols-2"> */}
+        <Card className="h-max min-h-56 border shadow-sm">
           <CardHeader className="flex items-center justify-between pb-2">
             <div className="flex flex-col">
               <CardTitle>Mood Analysis</CardTitle>
@@ -233,7 +232,7 @@ export default function CalendarJournal() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="daily">
-              <TabsContent value="daily" className="h-[300px]">
+              <TabsContent value="daily">
                 {analysisLoading ? (
                   <div className="bg-background flex h-full w-full items-center justify-center">
                     <Spinner />
@@ -246,7 +245,7 @@ export default function CalendarJournal() {
           </CardContent>
         </Card>
 
-        <Card className="border shadow-sm">
+        <Card className="h-max min-h-56 border shadow-sm">
           <CardHeader>
             <CardTitle>Tag Usage</CardTitle>
             <CardDescription>
@@ -254,7 +253,7 @@ export default function CalendarJournal() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div>
               {analysisLoading ? (
                 <div className="bg-background flex h-full w-full items-center justify-center">
                   <Spinner />
@@ -266,6 +265,7 @@ export default function CalendarJournal() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      {/* </div> */}
+    </>
   );
 }
