@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 
 interface JournalCardProps {
   entry: JournalEntry;
-  onClick: () => void;
-  viewMode: "grid" | "list";
+  onClick?: () => void;
+  viewMode?: "grid" | "list";
 }
 
 export default function JournalCard({

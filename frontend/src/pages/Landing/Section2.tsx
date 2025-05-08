@@ -100,10 +100,10 @@ export default function Section2() {
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.2 }}
             alt="Journal dashboard"
-            src="/dashboard.png"
+            src="/dashboard.jpeg"
             width={1000}
             height={1800}
-            className="max-w-none rounded-xl object-fill ring-1 shadow-xl ring-gray-400/10 md:-ml-4 lg:-ml-0"
+            className="mt-20 max-w-none scale-110 rounded-xl object-fill ring-1 shadow-xl ring-gray-400/10 md:-ml-4 lg:-ml-0"
           />
         </div>
       </div>

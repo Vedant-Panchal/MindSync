@@ -91,100 +91,95 @@ function RouteComponent() {
     : [];
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <main className="flex-1 overflow-auto p-4 sm:p-6">
-        <div className="mx-auto max-w-7xl space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription>Total Journals</CardDescription>
-                <CardTitle className="text-3xl">{data.journal_count}</CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <div className="text-muted-foreground text-xs">
-                  Last entry:{" "}
-                  {format(
-                    parseISO(data.journal_dates[data.journal_dates.length - 1]),
-                    "MMM d, yyyy",
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+    <main className="flex-1 overflow-auto sm:p-4">
+      <div className="max-w-7xl space-y-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardDescription>Total Journals</CardDescription>
+              <CardTitle className="text-3xl">{data.journal_count}</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="text-muted-foreground text-xs">
+                Last entry:{" "}
+                {format(
+                  parseISO(data.journal_dates[data.journal_dates.length - 1]),
+                  "MMM d, yyyy",
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription>Current Streak</CardDescription>
-                <CardTitle className="text-3xl">
-                  {data.current_streak} days
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Clock className="h-3 w-3" />
-                  Keep writing to increase your streak!
-                </div>
-              </CardContent>
-            </Card>
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardDescription>Current Streak</CardDescription>
+              <CardTitle className="text-3xl">
+                {data.current_streak} days
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                <Clock className="h-3 w-3" />
+                Keep writing to increase your streak!
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="border shadow-sm">
-              <CardHeader className="pb-2">
-                <CardDescription>Longest Streak</CardDescription>
-                <CardTitle className="text-3xl">
-                  {data.longest_streak} days
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Fire className="h-3 w-3 text-orange-500" />
-                  Your best writing streak so far!
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardDescription>Longest Streak</CardDescription>
+              <CardTitle className="text-3xl">
+                {data.longest_streak} days
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                <Fire className="h-3 w-3 text-orange-500" />
+                Your best writing streak so far!
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border shadow-sm">
-              <CardHeader>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="border shadow-sm">
+            <CardHeader className="flex items-center justify-between pb-2">
+              <div className="flex flex-col">
                 <CardTitle>Mood Analysis</CardTitle>
                 <CardDescription>
                   Track your emotional patterns over time
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="daily">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="daily">Daily Moods</TabsTrigger>
-                    <TabsTrigger value="overall">
-                      Overall Distribution
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="daily" className="h-[300px]">
-                    <MoodChart dailyMoods={data.daily_moods} />
-                    <ChartPie chartData={chartDataList} />
-                  </TabsContent>
-                  <TabsContent value="overall" className="h-[300px]">
-                    <MoodChart allMoods={data.all_mood_count} />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+              </div>
+              <Tabs defaultValue="daily">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="daily">Daily Moods</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="daily">
+                <TabsContent value="daily" className="h-[300px]">
+                  <ChartPie chartData={chartDataList} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
 
-            <Card className="border shadow-sm">
-              <CardHeader>
-                <CardTitle>Tag Usage</CardTitle>
-                <CardDescription>
-                  Most frequently used tags in your journals
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <TagUsageChart tagUsage={data.tag_usage} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="border shadow-sm">
+            <CardHeader>
+              <CardTitle>Tag Usage</CardTitle>
+              <CardDescription>
+                Most frequently used tags in your journals
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <TagUsageChart tagUsage={data.tag_usage} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
