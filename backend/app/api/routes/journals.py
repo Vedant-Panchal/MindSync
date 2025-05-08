@@ -156,7 +156,9 @@ async def save_draft(request: Request):
 
 
 @router.get("/dashboard/analysis")
-async def get_user_analysis(request: Request,start_date : Optional[date] = None,end_date : Optional[date] = None):
+async def get_user_analysis(
+    request: Request, start_date: Optional[date] = None, end_date: Optional[date] = None
+):
     try:
         user = getattr(request.state, "user", None)
 
@@ -164,12 +166,12 @@ async def get_user_analysis(request: Request,start_date : Optional[date] = None,
             return {"message": "User not authenticated.", "data": {}}
 
         user_id = user["id"]
-        if(start_date and end_date):
-            journals = get_journals_by_date(user_id,start_date,end_date)
-        elif (start_date and not end_date):
-            journals = get_journals_by_date(user_id,start_date)
-        elif(not start_date and end_date):
-            journals = get_journals_by_date(user_id,end_date)
+        if start_date and end_date:
+            journals = get_journals_by_date(user_id, start_date, end_date)
+        elif start_date and not end_date:
+            journals = get_journals_by_date(user_id, start_date)
+        elif not start_date and end_date:
+            journals = get_journals_by_date(user_id, end_date)
         else:
             journals = get_journals_by_date(user_id)
 
@@ -180,23 +182,27 @@ async def get_user_analysis(request: Request,start_date : Optional[date] = None,
         # Journal count
         journal_count = len(journals)
 
-        #word bubble
+        # word bubble
 
-        text = " ".join(e.get('title',"") + " " + e.get("content","") for e in journals)
+        text = " ".join(
+            e.get("title", "") + " " + e.get("content", "") for e in journals
+        )
         words = pre_process_journal(text)
         word_freq = Counter(words)
-        word_bubble =  [{"word": word, "frequency": freq} for word, freq in word_freq.most_common(50)]
+        word_bubble = [
+            {"word": word, "frequency": freq}
+            for word, freq in word_freq.most_common(50)
+        ]
 
         journal_list = []
         # print("journals",journals)
         for i in journals:
-            print("journal",i)
+            print("journal", i)
             journal_object = {
                 "title": i.get("title", ""),
-                "content": i.get("content", "")
+                "content": i.get("content", ""),
             }
             journal_list.append(journal_object)
-
 
         # Tag usage
         tag_usage = {}
@@ -263,8 +269,8 @@ async def get_user_analysis(request: Request,start_date : Optional[date] = None,
         return {
             "message": "User analysis data generated successfully.",
             "data": {
-                "journal_info" : journal_list,
-                "word_bubble" : word_bubble,
+                "journal_info": journal_list,
+                "word_bubble": word_bubble,
                 "journal_count": journal_count,
                 "tag_usage": top_tags,
                 "current_streak": current_streak,
