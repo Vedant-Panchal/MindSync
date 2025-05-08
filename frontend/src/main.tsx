@@ -70,7 +70,7 @@ preloadUser().then(() => {
             />
           </TooltipProvider>
         </Suspense>
-        {import.meta.env.DEV && <ReactQueryDevtools />}
+        {!import.meta.env.DEV && <ReactQueryDevtools />}
         <Toaster position="top-center" />
       </ErrorBoundary>
     </QueryClientProvider>,

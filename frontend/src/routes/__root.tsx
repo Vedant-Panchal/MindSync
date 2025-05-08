@@ -26,7 +26,7 @@ function RootComponent() {
   return (
     <div className="h-screen w-screen antialiased">
       <Outlet />
-      {import.meta.env.DEV && <TanStackRouterDevtools />}
+      {!import.meta.env.DEV && <TanStackRouterDevtools />}
     </div>
   );
 }

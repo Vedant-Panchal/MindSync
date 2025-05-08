@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { addDays, format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,6 +18,12 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api-client";
 import toast from "react-hot-toast";
 import { Spinner } from "./spinner";
+import { Badge } from "@/components/ui/badge";
+import JournalCard from "@/components/journals/journal-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChartPie } from "@/components/ui/pie-chart";
+import { TagUsageChart } from "@/components/ui/tag-usage-charts";
+import { motion } from "motion/react";
 
 export default function CalendarJournal() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -58,150 +70,201 @@ export default function CalendarJournal() {
   });
 
   const filteredEntries = data?.length ? data : [];
+  const getAnalyticsData = async () => {
+    const res = await api.get("/api/v1/journals/dashboard/analysis", {
+      params: { start_date: startDate || null, end_date: endDate || null },
+    });
+    return res as any;
+  };
 
+  const {
+    data: analysis,
+    isError: analysisIsError,
+    error: analysisError,
+    isLoading: analysisLoading,
+  } = useQuery({
+    queryKey: ["NewDashBoardData"],
+    queryFn: getAnalyticsData,
+  });
+  console.log("data", analysis?.all_mood_count);
+  const chartData = analysis?.all_mood_count;
+  console.log("data", chartData);
+  const chartDataList: any[] = chartData
+    ? Object.entries(chartData).map(([mood, count]) => ({
+        mood,
+        count,
+      }))
+    : [];
   console.log("start", startDate);
-  if (isError) {
-    toast.error(error.message);
+  if (analysisIsError) {
+    toast.error(analysisError.message);
   }
-
-  console.log("data", data);
-
   return (
-    <div className="bg-background min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-foreground mb-6 text-3xl font-bold">
-          Journal Calendar
-        </h1>
+    <div className="bg-background h-full w-full p-4 md:p-4">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+        {/* Calendar section */}
+        <div className="bg-card rounded-lg border p-4 shadow-sm">
+          <h2 className="text-card-foreground mb-4 text-xl font-semibold">
+            Select Date Range
+          </h2>
+          <Calendar
+            mode="range"
+            selected={dateRange}
+            onSelect={(range) => {
+              setDateRange(range);
+              setCurrentJournalIndex(0);
+            }}
+            className="rounded-md"
+            numberOfMonths={2}
+          />
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          {/* Calendar section */}
+          <div className="text-muted-foreground mt-4 text-sm">
+            <p>
+              <strong>Selected Range:</strong>{" "}
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, "PPP")} -{" "}
+                    {format(dateRange.to, "PPP")}
+                  </>
+                ) : (
+                  format(dateRange.from, "PPP")
+                )
+              ) : (
+                "Please select a date range"
+              )}
+            </p>
+          </div>
+        </div>
+        {isLoading ? (
+          <div className="bg-background flex h-full w-full items-center justify-center">
+            <Spinner />
+          </div>
+        ) : (
           <div className="bg-card rounded-lg border p-4 shadow-sm">
             <h2 className="text-card-foreground mb-4 text-xl font-semibold">
-              Select Date Range
+              Journal Entries
             </h2>
-            <Calendar
-              mode="range"
-              selected={dateRange}
-              onSelect={(range) => {
-                setDateRange(range);
-                setCurrentJournalIndex(0);
-              }}
-              className="rounded-md"
-              numberOfMonths={1}
-            />
 
-            <div className="text-muted-foreground mt-4 text-sm">
-              <p>
-                <strong>Selected Range:</strong>{" "}
-                {dateRange?.from ? (
-                  dateRange.to ? (
-                    <>
-                      {format(dateRange.from, "PPP")} -{" "}
-                      {format(dateRange.to, "PPP")}
-                    </>
-                  ) : (
-                    format(dateRange.from, "PPP")
-                  )
-                ) : (
-                  "Please select a date range"
-                )}
-              </p>
-            </div>
-          </div>
-          {isLoading ? (
-            <div className="bg-background flex h-full w-full items-center justify-center">
-              <Spinner />
-            </div>
-          ) : (
-            <div className="bg-card rounded-lg border p-4 shadow-sm">
-              <h2 className="text-card-foreground mb-4 text-xl font-semibold">
-                Journal Entries
-              </h2>
-
-              {data?.length > 0 ? (
-                <div className="relative">
-                  <div className="overflow-hidden">
-                    <div
-                      className="flex w-full transition-transform duration-300 ease-in-out"
-                      style={{
-                        transform: `translateX(-${currentJournalIndex * 100}%)`,
-                      }}
-                    >
-                      {filteredEntries.map((entry) => (
-                        <Card
+            {data?.length > 0 ? (
+              <div className="relative">
+                <div className="overflow-x-hidden p-5">
+                  <div
+                    className="flex h-full w-full gap-2 transition-transform duration-300 ease-in-out"
+                    style={{
+                      transform: `translateX(-${currentJournalIndex * 100}%)`,
+                    }}
+                  >
+                    {filteredEntries.map((entry) => (
+                      <div className="w-full flex-shrink-0" key={entry.id}>
+                        <JournalCard
                           key={entry.id}
-                          className="border-border w-full min-w-full flex-shrink-0 shadow-sm"
-                        >
-                          <CardContent className="p-6">
-                            <div className="text-muted-foreground mb-2 text-sm">
-                              {format(entry.date, "yyyy-MM-dd")}
-                            </div>
-                            <h3 className="text-card-foreground mb-3 text-xl font-semibold">
-                              {entry.title}
-                            </h3>
+                          entry={entry}
+                          viewMode="grid"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                            <p className="text-card-foreground line-clamp-3 flex cursor-pointer flex-wrap whitespace-pre-line">
-                              {entry.content.length > 150
-                                ? `${entry.content.substring(0, 150)}...`
-                                : entry.content}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                {/* Navigation buttons */}
+                <div className="mt-4 flex justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevJournal}
+                    disabled={currentJournalIndex === 0}
+                    className={cn(
+                      "border-border text-foreground",
+                      currentJournalIndex === 0 &&
+                        "cursor-not-allowed opacity-50",
+                    )}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
+                  </Button>
+
+                  <div className="text-muted-foreground text-sm">
+                    {filteredEntries.length > 0 ? (
+                      <span>
+                        {currentJournalIndex + 1} of {filteredEntries.length}
+                      </span>
+                    ) : null}
                   </div>
 
-                  {/* Navigation buttons */}
-                  <div className="mt-4 flex justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePrevJournal}
-                      disabled={currentJournalIndex === 0}
-                      className={cn(
-                        "border-border text-foreground",
-                        currentJournalIndex === 0 &&
-                          "cursor-not-allowed opacity-50",
-                      )}
-                    >
-                      <ChevronLeft className="mr-1 h-4 w-4" />
-                      Previous
-                    </Button>
-
-                    <div className="text-muted-foreground text-sm">
-                      {filteredEntries.length > 0 ? (
-                        <span>
-                          {currentJournalIndex + 1} of {filteredEntries.length}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleNextJournal}
-                      disabled={
-                        currentJournalIndex >= filteredEntries.length - 1
-                      }
-                      className={cn(
-                        "border-border text-foreground",
-                        currentJournalIndex >= filteredEntries.length - 1 &&
-                          "cursor-not-allowed opacity-50",
-                      )}
-                    >
-                      Next
-                      <ChevronRight className="ml-1 h-4 w-4" />
-                    </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextJournal}
+                    disabled={currentJournalIndex >= filteredEntries.length - 1}
+                    className={cn(
+                      "border-border text-foreground",
+                      currentJournalIndex >= filteredEntries.length - 1 &&
+                        "cursor-not-allowed opacity-50",
+                    )}
+                  >
+                    Next
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted-foreground py-8 text-center">
+                No journal entries found for the selected date range.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border shadow-sm">
+          <CardHeader className="flex items-center justify-between pb-2">
+            <div className="flex flex-col">
+              <CardTitle>Mood Analysis</CardTitle>
+              <CardDescription>
+                Track your emotional patterns over time
+              </CardDescription>
+            </div>
+            <Tabs defaultValue="daily">
+              <TabsList className="mb-4">
+                <TabsTrigger value="daily">Daily Moods</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="daily">
+              <TabsContent value="daily" className="h-[300px]">
+                {analysisLoading ? (
+                  <div className="bg-background flex h-full w-full items-center justify-center">
+                    <Spinner />
                   </div>
+                ) : (
+                  <ChartPie chartData={chartDataList} />
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <Card className="border shadow-sm">
+          <CardHeader>
+            <CardTitle>Tag Usage</CardTitle>
+            <CardDescription>
+              Most frequently used tags in your journals
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              {analysisLoading ? (
+                <div className="bg-background flex h-full w-full items-center justify-center">
+                  <Spinner />
                 </div>
               ) : (
-                <div className="text-muted-foreground py-8 text-center">
-                  No journal entries found for the selected date range.
-                </div>
+                <TagUsageChart tagUsage={analysis?.tag_usage} />
               )}
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

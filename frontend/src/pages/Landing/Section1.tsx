@@ -98,7 +98,7 @@ export default function Section1({ isLoggedIn }: { isLoggedIn: boolean }) {
         </nav>
       </header>
 
-      <div className="relative isolate px-6 pt-14 lg:px-8">
+      <div className="relative isolate px-6 lg:px-8">
         <div
           aria-hidden="true"
           className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
@@ -111,7 +111,7 @@ export default function Section1({ isLoggedIn }: { isLoggedIn: boolean }) {
             className="relative left-[calc(50%-11rem)] aspect-1155/678 w-[36.125rem] -translate-x-1/2 bg-linear-to-tr from-blue-400 to-sky-800 opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
           />
         </div>
-        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-40">
           <div className="hidden sm:mb-8 sm:flex sm:justify-center"></div>
           <div className="text-center">
             <motion.div

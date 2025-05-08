@@ -18,7 +18,6 @@ import { Route as AuthSigninImport } from "./routes/_auth/signin";
 import { Route as appAppImport } from "./routes/(app)/app";
 import { Route as appAppMoodsImport } from "./routes/(app)/app.moods";
 import { Route as appAppJournalsImport } from "./routes/(app)/app.journals";
-import { Route as appAppInsightsImport } from "./routes/(app)/app.insights";
 import { Route as appAppDashboardImport } from "./routes/(app)/app.dashboard";
 import { Route as appAppCreateImport } from "./routes/(app)/app.create";
 import { Route as appAppChatImport } from "./routes/(app)/app.chat";
@@ -64,12 +63,6 @@ const appAppMoodsRoute = appAppMoodsImport.update({
 const appAppJournalsRoute = appAppJournalsImport.update({
   id: "/journals",
   path: "/journals",
-  getParentRoute: () => appAppRoute,
-} as any);
-
-const appAppInsightsRoute = appAppInsightsImport.update({
-  id: "/insights",
-  path: "/insights",
   getParentRoute: () => appAppRoute,
 } as any);
 
@@ -164,13 +157,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof appAppDashboardImport;
       parentRoute: typeof appAppImport;
     };
-    "/(app)/app/insights": {
-      id: "/(app)/app/insights";
-      path: "/insights";
-      fullPath: "/app/insights";
-      preLoaderRoute: typeof appAppInsightsImport;
-      parentRoute: typeof appAppImport;
-    };
     "/(app)/app/journals": {
       id: "/(app)/app/journals";
       path: "/journals";
@@ -209,7 +195,6 @@ interface appAppRouteChildren {
   appAppChatRoute: typeof appAppChatRoute;
   appAppCreateRoute: typeof appAppCreateRoute;
   appAppDashboardRoute: typeof appAppDashboardRoute;
-  appAppInsightsRoute: typeof appAppInsightsRoute;
   appAppJournalsRoute: typeof appAppJournalsRoute;
   appAppMoodsRoute: typeof appAppMoodsRoute;
 }
@@ -219,7 +204,6 @@ const appAppRouteChildren: appAppRouteChildren = {
   appAppChatRoute: appAppChatRoute,
   appAppCreateRoute: appAppCreateRoute,
   appAppDashboardRoute: appAppDashboardRoute,
-  appAppInsightsRoute: appAppInsightsRoute,
   appAppJournalsRoute: appAppJournalsRoute,
   appAppMoodsRoute: appAppMoodsRoute,
 };
@@ -237,7 +221,6 @@ export interface FileRoutesByFullPath {
   "/app/chat": typeof appAppChatRoute;
   "/app/create": typeof appAppCreateRoute;
   "/app/dashboard": typeof appAppDashboardRoute;
-  "/app/insights": typeof appAppInsightsRoute;
   "/app/journals": typeof appAppJournalsRoute;
   "/app/moods": typeof appAppMoodsRoute;
 }
@@ -252,7 +235,6 @@ export interface FileRoutesByTo {
   "/app/chat": typeof appAppChatRoute;
   "/app/create": typeof appAppCreateRoute;
   "/app/dashboard": typeof appAppDashboardRoute;
-  "/app/insights": typeof appAppInsightsRoute;
   "/app/journals": typeof appAppJournalsRoute;
   "/app/moods": typeof appAppMoodsRoute;
 }
@@ -268,7 +250,6 @@ export interface FileRoutesById {
   "/(app)/app/chat": typeof appAppChatRoute;
   "/(app)/app/create": typeof appAppCreateRoute;
   "/(app)/app/dashboard": typeof appAppDashboardRoute;
-  "/(app)/app/insights": typeof appAppInsightsRoute;
   "/(app)/app/journals": typeof appAppJournalsRoute;
   "/(app)/app/moods": typeof appAppMoodsRoute;
 }
@@ -285,7 +266,6 @@ export interface FileRouteTypes {
     | "/app/chat"
     | "/app/create"
     | "/app/dashboard"
-    | "/app/insights"
     | "/app/journals"
     | "/app/moods";
   fileRoutesByTo: FileRoutesByTo;
@@ -299,7 +279,6 @@ export interface FileRouteTypes {
     | "/app/chat"
     | "/app/create"
     | "/app/dashboard"
-    | "/app/insights"
     | "/app/journals"
     | "/app/moods";
   id:
@@ -313,7 +292,6 @@ export interface FileRouteTypes {
     | "/(app)/app/chat"
     | "/(app)/app/create"
     | "/(app)/app/dashboard"
-    | "/(app)/app/insights"
     | "/(app)/app/journals"
     | "/(app)/app/moods";
   fileRoutesById: FileRoutesById;
@@ -363,7 +341,6 @@ export const routeTree = rootRoute
         "/(app)/app/chat",
         "/(app)/app/create",
         "/(app)/app/dashboard",
-        "/(app)/app/insights",
         "/(app)/app/journals",
         "/(app)/app/moods"
       ]
@@ -390,10 +367,6 @@ export const routeTree = rootRoute
     },
     "/(app)/app/dashboard": {
       "filePath": "(app)/app.dashboard.tsx",
-      "parent": "/(app)/app"
-    },
-    "/(app)/app/insights": {
-      "filePath": "(app)/app.insights.tsx",
       "parent": "/(app)/app"
     },
     "/(app)/app/journals": {
