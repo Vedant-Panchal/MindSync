@@ -5,6 +5,7 @@ import { z } from "zod";
 import { api } from "./api-client";
 import API_PATHS from "@/config/api-paths";
 import { useAuthStore, User } from "@/stores/authStore";
+import { queryClient } from "@/main";
 
 // api call definitions for auth (types, schemas, requests):
 // these are not part of features as this is a module shared across features
@@ -18,6 +19,7 @@ export const getUser = async (): Promise<User> => {
 const logout = async (): Promise<void> => {
   const response = await api.post(API_PATHS.AUTH.LOGOUT);
   useAuthStore.getState().setUser(null);
+  queryClient.clear();
   return response.data;
 };
 

@@ -1,4 +1,6 @@
+from collections import Counter
 from email import message
+from enum import nonmember
 from tracemalloc import start
 from turtle import st
 from typing import Optional
@@ -16,7 +18,7 @@ from fastapi.encoders import jsonable_encoder
 from loguru import logger
 
 from app.utils.otp_utils import get_history, store_draft, store_otp
-from app.utils.utils import submit_draft
+from app.utils.utils import pre_process_journal, submit_draft
 from app.utils.chatbot_utils import (
     final_response,
     get_journals_by_date,
@@ -36,7 +38,6 @@ def get_all_journal(
         if start_date and end_date:
             response = get_journals_by_date(user["id"], start_date, end_date)
         elif start_date and not end_date:
-            print(start_date)
             response = get_journals_by_date(user["id"], start_date)
         elif end_date and not start_date:
             response = get_journals_by_date(user["id"], end_date=end_date)
@@ -54,7 +55,6 @@ def get_all_journal(
             if not created_at:
                 continue
 
-            # Parse and format date
             date_obj = datetime.strptime(created_at, "%Y-%m-%d")
             formatted_date = date_obj.strftime("%d %B, %Y").lstrip("0")
 
@@ -156,21 +156,47 @@ async def save_draft(request: Request):
 
 
 @router.get("/dashboard/analysis")
-async def get_user_analysis(request: Request):
+async def get_user_analysis(request: Request,start_date : Optional[date] = None,end_date : Optional[date] = None):
     try:
         user = getattr(request.state, "user", None)
+
         if not user:
             return {"message": "User not authenticated.", "data": {}}
 
         user_id = user["id"]
-        query = db.from_("journals").select("*").eq("user_id", user_id)
-        journals = query.execute().data
+        if(start_date and end_date):
+            journals = get_journals_by_date(user_id,start_date,end_date)
+        elif (start_date and not end_date):
+            journals = get_journals_by_date(user_id,start_date)
+        elif(not start_date and end_date):
+            journals = get_journals_by_date(user_id,end_date)
+        else:
+            journals = get_journals_by_date(user_id)
 
+        # print("journals first",journals)
         if not journals:
             return {"message": "No data available for analysis.", "data": {}}
 
         # Journal count
         journal_count = len(journals)
+
+        #word bubble
+
+        text = " ".join(e.get('title',"") + " " + e.get("content","") for e in journals)
+        words = pre_process_journal(text)
+        word_freq = Counter(words)
+        word_bubble =  [{"word": word, "frequency": freq} for word, freq in word_freq.most_common(50)]
+
+        journal_list = []
+        # print("journals",journals)
+        for i in journals:
+            print("journal",i)
+            journal_object = {
+                "title": i.get("title", ""),
+                "content": i.get("content", "")
+            }
+            journal_list.append(journal_object)
+
 
         # Tag usage
         tag_usage = {}
@@ -237,12 +263,14 @@ async def get_user_analysis(request: Request):
         return {
             "message": "User analysis data generated successfully.",
             "data": {
+                "journal_info" : journal_list,
+                "word_bubble" : word_bubble,
                 "journal_count": journal_count,
                 "tag_usage": top_tags,
                 "current_streak": current_streak,
                 "longest_streak": longest_streak,
                 "journal_dates": [d.strftime("%Y-%m-%d") for d in journal_dates],
-                "daily_moods": daily_mood,
+                "daily_mood": daily_mood,
                 "all_mood_count": top_five_moods,
             },
         }

@@ -13,6 +13,8 @@ from app.core.connection import redis_client
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from loguru import logger
+from collections import Counter
+import string
 
 
 from app.core.exceptions import APIException
@@ -223,6 +225,7 @@ def aggregate_journal(
 
     if moods:
         sorted_moods = sorted(moods.items(), key=lambda x: x[1], reverse=True)[:3]
+        print(f"Moods is  {sorted_moods}")
         moods = dict(sorted_moods)
     else:
         moods = {"neutral": 0.0}
@@ -245,3 +248,26 @@ def aggregate_journal(
     }
     # return JournalCreate(**journal_data)
     return Journal(**journal_data)
+
+STOPWORDS = set([
+    'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'you',
+    'your', 'yours', 'he', 'him', 'his', 'she', 'her', 'it',
+    'they', 'them', 'this', 'that', 'is', 'am', 'are', 'was',
+    'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do',
+    'does', 'did', 'a', 'an', 'the', 'and', 'but', 'if', 'or',
+    'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for',
+    'with', 'about', 'against', 'between', 'into', 'through',
+    'during', 'before', 'after', 'above', 'below', 'to', 'from',
+    'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under',
+    'again', 'further', 'then', 'once', 'here', 'there', 'when',
+    'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few',
+    'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
+    'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can',
+    'will', 'just', 'don', 'should', 'now'
+])
+
+def pre_process_journal(text: str):
+    words = text.lower().translate(str.maketrans('', '', string.punctuation)).split()
+    return [word for word in words if word not in STOPWORDS]
+
+

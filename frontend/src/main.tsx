@@ -15,7 +15,7 @@ import { api } from "@/lib/api-client";
 import { Spinner } from "@/components/ui/spinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: queryConfig,
 });
 
