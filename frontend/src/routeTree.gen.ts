@@ -16,7 +16,6 @@ import { Route as IndexImport } from "./routes/index";
 import { Route as AuthSignupImport } from "./routes/_auth/signup";
 import { Route as AuthSigninImport } from "./routes/_auth/signin";
 import { Route as appAppImport } from "./routes/(app)/app";
-import { Route as appAppMoodsImport } from "./routes/(app)/app.moods";
 import { Route as appAppJournalsImport } from "./routes/(app)/app.journals";
 import { Route as appAppDashboardImport } from "./routes/(app)/app.dashboard";
 import { Route as appAppCreateImport } from "./routes/(app)/app.create";
@@ -52,12 +51,6 @@ const appAppRoute = appAppImport.update({
   id: "/(app)/app",
   path: "/app",
   getParentRoute: () => rootRoute,
-} as any);
-
-const appAppMoodsRoute = appAppMoodsImport.update({
-  id: "/moods",
-  path: "/moods",
-  getParentRoute: () => appAppRoute,
 } as any);
 
 const appAppJournalsRoute = appAppJournalsImport.update({
@@ -164,13 +157,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof appAppJournalsImport;
       parentRoute: typeof appAppImport;
     };
-    "/(app)/app/moods": {
-      id: "/(app)/app/moods";
-      path: "/moods";
-      fullPath: "/app/moods";
-      preLoaderRoute: typeof appAppMoodsImport;
-      parentRoute: typeof appAppImport;
-    };
   }
 }
 
@@ -196,7 +182,6 @@ interface appAppRouteChildren {
   appAppCreateRoute: typeof appAppCreateRoute;
   appAppDashboardRoute: typeof appAppDashboardRoute;
   appAppJournalsRoute: typeof appAppJournalsRoute;
-  appAppMoodsRoute: typeof appAppMoodsRoute;
 }
 
 const appAppRouteChildren: appAppRouteChildren = {
@@ -205,7 +190,6 @@ const appAppRouteChildren: appAppRouteChildren = {
   appAppCreateRoute: appAppCreateRoute,
   appAppDashboardRoute: appAppDashboardRoute,
   appAppJournalsRoute: appAppJournalsRoute,
-  appAppMoodsRoute: appAppMoodsRoute,
 };
 
 const appAppRouteWithChildren =
@@ -222,7 +206,6 @@ export interface FileRoutesByFullPath {
   "/app/create": typeof appAppCreateRoute;
   "/app/dashboard": typeof appAppDashboardRoute;
   "/app/journals": typeof appAppJournalsRoute;
-  "/app/moods": typeof appAppMoodsRoute;
 }
 
 export interface FileRoutesByTo {
@@ -236,7 +219,6 @@ export interface FileRoutesByTo {
   "/app/create": typeof appAppCreateRoute;
   "/app/dashboard": typeof appAppDashboardRoute;
   "/app/journals": typeof appAppJournalsRoute;
-  "/app/moods": typeof appAppMoodsRoute;
 }
 
 export interface FileRoutesById {
@@ -251,7 +233,6 @@ export interface FileRoutesById {
   "/(app)/app/create": typeof appAppCreateRoute;
   "/(app)/app/dashboard": typeof appAppDashboardRoute;
   "/(app)/app/journals": typeof appAppJournalsRoute;
-  "/(app)/app/moods": typeof appAppMoodsRoute;
 }
 
 export interface FileRouteTypes {
@@ -266,8 +247,7 @@ export interface FileRouteTypes {
     | "/app/chat"
     | "/app/create"
     | "/app/dashboard"
-    | "/app/journals"
-    | "/app/moods";
+    | "/app/journals";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -279,8 +259,7 @@ export interface FileRouteTypes {
     | "/app/chat"
     | "/app/create"
     | "/app/dashboard"
-    | "/app/journals"
-    | "/app/moods";
+    | "/app/journals";
   id:
     | "__root__"
     | "/"
@@ -292,8 +271,7 @@ export interface FileRouteTypes {
     | "/(app)/app/chat"
     | "/(app)/app/create"
     | "/(app)/app/dashboard"
-    | "/(app)/app/journals"
-    | "/(app)/app/moods";
+    | "/(app)/app/journals";
   fileRoutesById: FileRoutesById;
 }
 
@@ -341,8 +319,7 @@ export const routeTree = rootRoute
         "/(app)/app/chat",
         "/(app)/app/create",
         "/(app)/app/dashboard",
-        "/(app)/app/journals",
-        "/(app)/app/moods"
+        "/(app)/app/journals"
       ]
     },
     "/_auth/signin": {
@@ -371,10 +348,6 @@ export const routeTree = rootRoute
     },
     "/(app)/app/journals": {
       "filePath": "(app)/app.journals.tsx",
-      "parent": "/(app)/app"
-    },
-    "/(app)/app/moods": {
-      "filePath": "(app)/app.moods.tsx",
       "parent": "/(app)/app"
     }
   }

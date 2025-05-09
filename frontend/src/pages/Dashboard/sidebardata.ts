@@ -23,7 +23,6 @@ export const getSidebarData = (user: any) => {
     navMain: [
       { title: "Dashboard", url: dashboardRoute, icon: IconCategory },
       { title: "Journals", url: journalRoute, icon: SquarePen },
-      { title: "Moods", url: moodsRoute, icon: IconChartBar },
       { title: "Calendar", url: calendarRoute, icon: IconCalendarWeek },
       { title: "Chat", url: chatRoute, icon: IconMessageChatbot },
     ],
