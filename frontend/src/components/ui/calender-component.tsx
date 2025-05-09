@@ -233,9 +233,9 @@ export default function CalendarJournal() {
           </div>
         )}
       </div>
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="mt-5 grid gap-6 md:grid-cols-2">
         {isLoading ? (
-          <div className="bg-background flex h-full w-full items-center justify-center rounded-lg border p-4 shadow-sm">
+          <div className="bg-background flex h-full min-h-56 w-full items-center justify-center rounded-lg border p-4 shadow-sm">
             <Spinner />
           </div>
         ) : (
@@ -278,7 +278,7 @@ export default function CalendarJournal() {
         )}
 
         {isLoading ? (
-          <div className="bg-background flex h-full w-full items-center justify-center rounded-lg border p-4 shadow-sm">
+          <div className="bg-background flex h-full min-h-56 w-full items-center justify-center rounded-lg border p-4 shadow-sm">
             <Spinner />
           </div>
         ) : (
