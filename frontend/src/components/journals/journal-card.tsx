@@ -21,6 +21,7 @@ export default function JournalCard({
     year: "numeric",
   });
 
+  console.log("entry", entry);
   // Get a consistent color for this entry based on its ID
   const entryColor = getEntryColor(entry.id);
 

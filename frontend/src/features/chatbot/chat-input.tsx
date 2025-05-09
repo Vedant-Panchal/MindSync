@@ -58,6 +58,7 @@ export function ChatInputWithActions() {
         role: "assistant",
       };
       setLastMessage(lastMessageObject);
+      setLoading(false);
     },
   });
 

@@ -28,6 +28,7 @@ const COLORS = [
 ];
 
 export function TagUsageChart({ tagUsage }: TagUsageChartProps) {
+  console.log("tagUsage", tagUsage);
   const data = Object.entries(tagUsage)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);

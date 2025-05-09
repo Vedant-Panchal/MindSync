@@ -1,9 +1,12 @@
 from datetime import datetime
 import json
 import re
+from urllib import response
 import dateparser
 import google.generativeai as genai
 from loguru import logger
+from pydantic import BaseModel
+from sympy import false
 
 from app.core.config import GEMINI_KEY
 from app.core.connection import db
@@ -495,6 +498,8 @@ from typing import List, Dict, Any, Optional
 
 genai.configure(api_key=GEMINI_KEY)
 
+class ResponseSchema(BaseModel):
+    message : str
 
 def final_response(
     data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
@@ -554,15 +559,24 @@ def final_response(
             "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
         }}
 
-        This is the user query = '{user_query}'.
-        Respond to this query with the help of this data: {data}.
-        Use natural language and incorporate context from the conversation history if available.
-        Respond in JSON format like:
-        {{
-            "title": "title",
-            "date": 'date',
-            "message": "message"
-        }}
+            When responding to journal-related queries, format your response with proper markdown:
+
+            ### title with descriptive heading related to the query
+
+            **Date:** {today}
+
+            Main content with appropriate markdown formatting:
+            - Use **bold** for emphasis
+            - Use *italics* for subtle emphasis
+            - Use ### for section headings
+            - Use bullet points or numbered lists when appropriate
+            - Include blockquotes for journal excerpts
+
+            This is the user query = '{user_query}'.
+            Respond to this query with the help of this data: {data}.
+            Use natural language and incorporate context from the conversation history if available.
+            Always ensure the response is properly escaped JSON that can be parsed with json.loads().
+
         """
 
     model = genai.GenerativeModel(
@@ -601,22 +615,35 @@ def final_response(
 
         chat = model.start_chat(history=transformed)
         response = chat.send_message(prompt, stream=True)
-
         full_response = ""
         for chunk in response:
             if chunk.candidates:
                 part = chunk.candidates[0].content.parts[0].text
                 full_response += part
-
+        # print("before cleaned",full_response)
         cleaned = re.sub(
             r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
         )
+
+        # print("after cleaning ",cleaned)
         parsed = json.loads(cleaned)
-        logger.info(f"this is response : {full_response}")
+
+        # print(f"after parsing ",parsed)
+        if isinstance(parsed, list):
+            combined_message = "\n".join(
+                [f"{i+1}. {entry['title']} ({entry['date']}): {entry['message']}" for i, entry in enumerate(parsed)]
+            )
+            parsed = {
+                "title": "List of Journal Entries",
+                "date": str(today),
+                "message": combined_message
+            }
+        # logger.info(f"this is response : {full_response}")
         query_object = {"user_query": user_query, "response": parsed}
         history.append(query_object)
         dumped_history = json.dumps(history)
         store_history(dumped_history, user_id)
+        print("parsed response is parse",parsed)
         return {
             "message": parsed,
         }

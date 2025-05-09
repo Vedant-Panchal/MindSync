@@ -30,9 +30,9 @@ export default function CalendarJournal() {
     from: new Date(),
     to: addDays(new Date(), 0),
   });
-
-  const [startDate, setStartDate] = useState<string>();
-  const [endDate, setEndDate] = useState<string>();
+  const formattedDate = format(new Date(), "yyyy-MM-dd");
+  const [startDate, setStartDate] = useState<string>(formattedDate);
+  const [endDate, setEndDate] = useState<string>(formattedDate);
 
   const [currentJournalIndex, setCurrentJournalIndex] = useState(0);
 
@@ -42,12 +42,13 @@ export default function CalendarJournal() {
 
   const handleNextJournal = () => {
     setCurrentJournalIndex((prev) =>
-      prev < filteredEntries.length - 1 ? prev + 1 : prev,
+      prev < (data?.journal_info?.length || 0) - 1 ? prev + 1 : prev,
     );
   };
 
   useEffect(() => {
     if (dateRange?.from) {
+      console.log("in Use Effect");
       const formattedStartDate = format(dateRange.from, "yyyy-MM-dd");
       const formattedEndDate = format(
         dateRange.to || dateRange.from,
@@ -58,36 +59,47 @@ export default function CalendarJournal() {
     }
   }, [dateRange]);
 
+  console.log("Date Changed", dateRange);
+
   const { data, error, isError, isLoading } = useQuery({
     queryKey: ["getJournals", startDate, endDate],
     queryFn: async () => {
-      let queryUrl = `/api/v1/journals/get`;
+      let queryUrl = `api/v1/journals/dashboard/analysis`;
       if (startDate)
         queryUrl = queryUrl + `?start_date=${startDate}&end_date=${endDate}`;
       const res = await api.get(queryUrl);
-      return res as any;
+      console.log("In Query", res);
+      return res.data as any;
     },
   });
 
-  const filteredEntries = data?.length ? data : [];
-  const getAnalyticsData = async () => {
-    const res = await api.get("/api/v1/journals/dashboard/analysis", {
-      params: { start_date: startDate || null, end_date: endDate || null },
-    });
-    return res as any;
-  };
+  console.log("res", data);
+  if (isError) {
+    toast.error(error.message);
+  }
 
-  const {
-    data: analysis,
-    isError: analysisIsError,
-    error: analysisError,
-    isLoading: analysisLoading,
-  } = useQuery({
-    queryKey: ["NewDashBoardData"],
-    queryFn: getAnalyticsData,
-  });
-  console.log("data", analysis?.all_mood_count);
-  const chartData = analysis?.all_mood_count;
+  console.log(data?.length);
+  const filteredEntries = data ? data : {};
+
+  console.log("filtered Entry", filteredEntries);
+  // const getAnalyticsData = async () => {
+  //   const res = await api.get("/api/v1/journals/dashboard/analysis", {
+  //     params: { start_date: startDate || null, end_date: endDate || null },
+  //   });
+  //   return res.data as any;
+  // };
+
+  // const {
+  //   data: analysis,
+  //   isError: analysisIsError,
+  //   error: analysisError,
+  //   isLoading: analysisLoading,
+  // } = useQuery({
+  //   queryKey: ["NewDashBoardData"],
+  //   queryFn: getAnalyticsData,
+  // });
+  // console.log("data", analysis?.all_mood_count);
+  const chartData = filteredEntries?.all_mood_count;
   console.log("data", chartData);
   const chartDataList: any[] = chartData
     ? Object.entries(chartData).map(([mood, count]) => ({
@@ -96,11 +108,11 @@ export default function CalendarJournal() {
       }))
     : [];
   console.log("start", startDate);
-  if (analysisIsError) {
-    toast.error(analysisError.message);
+  if (isError) {
+    toast.error(error.message);
   }
   return (
-    <div className="bg-background h-full w-full p-4 md:p-4">
+    <div className="bg-background h-full w-full">
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         {/* Calendar section */}
         <div className="bg-card rounded-lg border p-4 shadow-sm">
@@ -137,7 +149,7 @@ export default function CalendarJournal() {
           </div>
         </div>
         {isLoading ? (
-          <div className="bg-background flex h-full w-full items-center justify-center">
+          <div className="bg-background flex h-full w-full items-center justify-center rounded-lg border p-4 shadow-sm">
             <Spinner />
           </div>
         ) : (
@@ -146,7 +158,7 @@ export default function CalendarJournal() {
               Journal Entries
             </h2>
 
-            {data?.length > 0 ? (
+            {filteredEntries && filteredEntries.journal_info ? (
               <div className="relative">
                 <div className="overflow-x-hidden p-5">
                   <div
@@ -155,7 +167,7 @@ export default function CalendarJournal() {
                       transform: `translateX(-${currentJournalIndex * 100}%)`,
                     }}
                   >
-                    {filteredEntries.map((entry) => (
+                    {filteredEntries.journal_info.map((entry) => (
                       <div className="w-full flex-shrink-0" key={entry.id}>
                         <JournalCard
                           key={entry.id}
@@ -185,9 +197,10 @@ export default function CalendarJournal() {
                   </Button>
 
                   <div className="text-muted-foreground text-sm">
-                    {filteredEntries.length > 0 ? (
+                    {filteredEntries.journal_info.length > 0 ? (
                       <span>
-                        {currentJournalIndex + 1} of {filteredEntries.length}
+                        {currentJournalIndex + 1} of{" "}
+                        {filteredEntries.journal_info.length}
                       </span>
                     ) : null}
                   </div>
@@ -196,10 +209,14 @@ export default function CalendarJournal() {
                     variant="outline"
                     size="sm"
                     onClick={handleNextJournal}
-                    disabled={currentJournalIndex >= filteredEntries.length - 1}
+                    disabled={
+                      currentJournalIndex >=
+                      filteredEntries.journal_info.length - 1
+                    }
                     className={cn(
                       "border-border text-foreground",
-                      currentJournalIndex >= filteredEntries.length - 1 &&
+                      currentJournalIndex >=
+                        filteredEntries.journal_info.length - 1 &&
                         "cursor-not-allowed opacity-50",
                     )}
                   >
@@ -217,54 +234,82 @@ export default function CalendarJournal() {
         )}
       </div>
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="border shadow-sm">
-          <CardHeader className="flex items-center justify-between pb-2">
-            <div className="flex flex-col">
-              <CardTitle>Mood Analysis</CardTitle>
-              <CardDescription>
-                Track your emotional patterns over time
-              </CardDescription>
-            </div>
-            <Tabs defaultValue="daily">
-              <TabsList className="mb-4">
-                <TabsTrigger value="daily">Daily Moods</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="daily">
-              <TabsContent value="daily" className="h-[300px]">
-                {analysisLoading ? (
-                  <div className="bg-background flex h-full w-full items-center justify-center">
-                    <Spinner />
+        {isLoading ? (
+          <div className="bg-background flex h-full w-full items-center justify-center rounded-lg border p-4 shadow-sm">
+            <Spinner />
+          </div>
+        ) : (
+          <div>
+            {filteredEntries && filteredEntries.all_mood_count ? (
+              <Card className="border shadow-sm">
+                <CardHeader className="flex items-center justify-between pb-2">
+                  <div className="flex flex-col">
+                    <CardTitle>Mood Analysis</CardTitle>
+                    <CardDescription>
+                      Track your emotional patterns over time
+                    </CardDescription>
                   </div>
-                ) : (
-                  <ChartPie chartData={chartDataList} />
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                  <Tabs defaultValue="daily">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="daily">Daily Moods</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="daily">
+                    <TabsContent value="daily" className="h-[300px]">
+                      {isLoading ? (
+                        <div className="bg-background flex h-full w-full items-center justify-center">
+                          <Spinner />
+                        </div>
+                      ) : (
+                        <ChartPie chartData={chartDataList} />
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-muted-foreground py-8 text-center">
+                No journal entries found for the selected date range.
+              </div>
+            )}
+          </div>
+        )}
 
-        <Card className="border shadow-sm">
-          <CardHeader>
-            <CardTitle>Tag Usage</CardTitle>
-            <CardDescription>
-              Most frequently used tags in your journals
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              {analysisLoading ? (
-                <div className="bg-background flex h-full w-full items-center justify-center">
-                  <Spinner />
-                </div>
-              ) : (
-                <TagUsageChart tagUsage={analysis?.tag_usage} />
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          <div className="bg-background flex h-full w-full items-center justify-center rounded-lg border p-4 shadow-sm">
+            <Spinner />
+          </div>
+        ) : (
+          <>
+            {filteredEntries && filteredEntries.tag_usage ? (
+              <Card className="border shadow-sm">
+                <CardHeader>
+                  <CardTitle>Tag Usage</CardTitle>
+                  <CardDescription>
+                    Most frequently used tags in your journals
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    {isLoading ? (
+                      <div className="bg-background flex h-full w-full items-center justify-center rounded-lg border p-4 shadow-sm">
+                        <Spinner />
+                      </div>
+                    ) : (
+                      <TagUsageChart tagUsage={filteredEntries?.tag_usage} />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="text-muted-foreground py-8 text-center">
+                No journal entries found for the selected date range.
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

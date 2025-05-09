@@ -2,7 +2,6 @@ from email import message
 from fastapi import APIRouter, Request, status, HTTPException
 from datetime import date, datetime
 from uuid import uuid4
-
 from sqlalchemy import update
 from sympy import content
 from app.core.config import MODEL_VECTOR

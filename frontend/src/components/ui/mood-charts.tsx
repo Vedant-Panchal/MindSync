@@ -45,6 +45,7 @@ const COLORS = {
 };
 
 export function MoodChart({ dailyMoods, allMoods }: MoodChartProps) {
+  console.log("dailyMoods", dailyMoods);
   if (dailyMoods) {
     const dates = Object.keys(dailyMoods).sort();
     const latestDate = dates[dates.length - 1];

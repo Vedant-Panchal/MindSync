@@ -54,7 +54,6 @@ def get_all_journal(
             created_at = journal.get("created_at")
             if not created_at:
                 continue
-
             date_obj = datetime.strptime(created_at, "%Y-%m-%d")
             formatted_date = date_obj.strftime("%d %B, %Y").lstrip("0")
 
@@ -195,13 +194,27 @@ async def get_user_analysis(
         ]
 
         journal_list = []
+        # all_mood_count 
         # print("journals",journals)
         for i in journals:
-            print("journal", i)
-            journal_object = {
+            created_at = i.get("created_at")
+            if not created_at:
+                continue
+            date_obj = datetime.strptime(created_at, "%Y-%m-%d")
+            formatted_date = date_obj.strftime("%d %B, %Y").lstrip("0")
+
+            # Prepare data
+            data_obj = {
+                "id": i.get("id", ""),
                 "title": i.get("title", ""),
                 "content": i.get("content", ""),
+                "rich_text": i.get("rich_text", ""),
+                "date": formatted_date,
+                "moods": i.get("moods", []),
+                "tags": i.get("tags", []),
+                "created_at": i.get("created_at", ""),
             }
+            journal_object = data_obj
             journal_list.append(journal_object)
 
         # Tag usage
@@ -259,13 +272,15 @@ async def get_user_analysis(
                 # Daily mood aggregation
                 daily_mood[date][mood] = daily_mood[date].get(mood, 0) + score
             # All mood count aggregation
-            all_mood_count[mood] = all_mood_count.get(mood, 0) + 1
+                all_mood_count[mood] = all_mood_count.get(mood, 0) + 1
 
         # Get top 5 moods by count
         top_five_moods = dict(
             sorted(all_mood_count.items(), key=lambda item: item[1], reverse=True)[:5]
         )
 
+        print("all",all_mood_count)
+        print("top 5",top_five_moods)
         return {
             "message": "User analysis data generated successfully.",
             "data": {
