@@ -194,7 +194,7 @@ async def get_user_analysis(
         ]
 
         journal_list = []
-        # all_mood_count 
+        # all_mood_count
         # print("journals",journals)
         for i in journals:
             created_at = i.get("created_at")
@@ -271,7 +271,7 @@ async def get_user_analysis(
             for mood, score in moods.items():
                 # Daily mood aggregation
                 daily_mood[date][mood] = daily_mood[date].get(mood, 0) + score
-            # All mood count aggregation
+                # All mood count aggregation
                 all_mood_count[mood] = all_mood_count.get(mood, 0) + 1
 
         # Get top 5 moods by count
@@ -279,8 +279,8 @@ async def get_user_analysis(
             sorted(all_mood_count.items(), key=lambda item: item[1], reverse=True)[:5]
         )
 
-        print("all",all_mood_count)
-        print("top 5",top_five_moods)
+        print("all", all_mood_count)
+        print("top 5", top_five_moods)
         return {
             "message": "User analysis data generated successfully.",
             "data": {

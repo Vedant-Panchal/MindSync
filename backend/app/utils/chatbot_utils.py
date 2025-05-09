@@ -498,8 +498,10 @@ from typing import List, Dict, Any, Optional
 
 genai.configure(api_key=GEMINI_KEY)
 
+
 class ResponseSchema(BaseModel):
-    message : str
+    message: str
+
 
 def final_response(
     data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
@@ -631,19 +633,22 @@ def final_response(
         # print(f"after parsing ",parsed)
         if isinstance(parsed, list):
             combined_message = "\n".join(
-                [f"{i+1}. {entry['title']} ({entry['date']}): {entry['message']}" for i, entry in enumerate(parsed)]
+                [
+                    f"{i+1}. {entry['title']} ({entry['date']}): {entry['message']}"
+                    for i, entry in enumerate(parsed)
+                ]
             )
             parsed = {
                 "title": "List of Journal Entries",
                 "date": str(today),
-                "message": combined_message
+                "message": combined_message,
             }
         # logger.info(f"this is response : {full_response}")
         query_object = {"user_query": user_query, "response": parsed}
         history.append(query_object)
         dumped_history = json.dumps(history)
         store_history(dumped_history, user_id)
-        print("parsed response is parse",parsed)
+        print("parsed response is parse", parsed)
         return {
             "message": parsed,
         }
