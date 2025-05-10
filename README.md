@@ -27,7 +27,7 @@
 <p>Journals</p>
 <img src="/frontend/public/journals.png" alt="journals" width="100%" height="100%/">
 <p>View each journal</p>
-<img src="/frontend/public/journals_each.png" alt="journals" width="100%" height="100%/">
+<img src="/frontend/public/journal_each.png" alt="journals" width="100%" height="100%/">
 <p>Calendar</p>
 <img src="/frontend/public/calendar.jpeg" alt="calendar" width="100%" height="100%/">
 <p>Chatbot</p>
