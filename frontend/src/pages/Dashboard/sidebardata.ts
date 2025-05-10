@@ -1,6 +1,5 @@
 import { Route as dashboardRoute } from "@/routes/(app)/app.dashboard";
 import { Route as journalRoute } from "@/routes/(app)/app.journals";
-import { Route as moodsRoute } from "@/routes/(app)/app.moods";
 import { Route as calendarRoute } from "@/routes/(app)/app.calendar";
 import { Route as chatRoute } from "@/routes/(app)/app.chat";
 
