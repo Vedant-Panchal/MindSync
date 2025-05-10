@@ -157,10 +157,6 @@ Make sure you have the following installed before setting up the project:
    poetry run uvicorn app.main:app --reload
    ```
 
-<h2> Built with</h2>
-
-Technologies used in the project:
-
 <h2>💖Like my work?</h2>
 
 For any queries related to the project you can mail me at vedant.webb@gmail.com or my friend Mohammed at mohammedrupawala8@gmail.com
