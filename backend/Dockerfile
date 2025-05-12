@@ -8,7 +8,6 @@ ENV POETRY_NO_INTERACTION=1 \
 # Install Poetry
 RUN pip install poetry==2.0.1
 
-# Setup work directory
 WORKDIR /app
 
 # Copy pyproject and lock files first (leverage Docker layer caching)
