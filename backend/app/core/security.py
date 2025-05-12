@@ -13,18 +13,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
         self.excluded_paths = {
-            "/auth/v1/login",
-            "/auth/v1/sign-in",
-            "/auth/v1/sign-up",
-            "/auth/v1/reset-password",
-            "/auth/v1/reset-password/verify",
-            "/auth/v1/verify-otp",
+            "/api/auth/v1/login",
+            "/api/auth/v1/sign-in",
+            "/api/auth/v1/sign-up",
+            "/api/auth/v1/reset-password",
+            "/api/auth/v1/reset-password/verify",
+            "/api/auth/v1/verify-otp",
             "/heartbeat",
             "/docs",
             "/redoc",
             "/openapi.json",
-            "/auth/v1/google/login",
-            "/auth/v1/google/callback",
+            "/api/auth/v1/google/login",
+            "/api/auth/v1/google/callback",
         }  # Public routes
 
     # print("IN Security")
