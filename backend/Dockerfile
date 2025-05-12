@@ -25,4 +25,4 @@ EXPOSE 8000
 
 
 # Run using poetry-managed venv
-CMD ["fastapi", "run", "./app/main.py", "--port", "80","--workers","2"]
+CMD ["fastapi", "run", "./app/main.py", "--port", "8000","--workers","2"]
