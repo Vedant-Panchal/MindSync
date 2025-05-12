@@ -45,6 +45,7 @@ if ENVIRONMENT == "production":
 else:
     secure = False
 
+
 @router.get("/me")
 async def get_me(request: Request):
     return request.state.user  # User is already set by middleware
@@ -115,7 +116,7 @@ async def verify(response: Response, data: create_user):
             value=access_token,
             max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # convert mins to seconds
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
 
@@ -127,7 +128,7 @@ async def verify(response: Response, data: create_user):
             * 60
             * 60,  # Convert days to seconds
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
         logger.success("User created successfully with email: {}", email)
@@ -205,7 +206,7 @@ async def signIn(response: Response, data: VerifyUser):
             value=access_token,
             max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # in seconds
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
         response.set_cookie(
@@ -216,7 +217,7 @@ async def signIn(response: Response, data: VerifyUser):
             * 60
             * 60,  # Convert days to seconds
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
         logger.success("User signed in successfully with email: {}", data.email)
@@ -352,7 +353,7 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
             value=new_access_token,
             max_age=ACCESS_TOKEN_EXPIRES_MINS,
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
         logger.success(
@@ -439,14 +440,14 @@ async def google_callback(request: Request):
             "access_token",
             access_token,
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
         response.set_cookie(
             "refresh_token",
             refresh_token,
             httponly=True,
-            secure=secure,
+            secure=True,
             samesite="None",
         )
         return response
