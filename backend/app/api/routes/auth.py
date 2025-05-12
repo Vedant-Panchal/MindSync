@@ -124,7 +124,7 @@ async def verify(response: Response, data: create_user):
             * 60,  # Convert days to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Strict",
+            samesite="Lax",
         )
         logger.success("User created successfully with email: {}", email)
         return {"message": "User created successfully."}
@@ -213,7 +213,7 @@ async def signIn(response: Response, data: VerifyUser):
             * 60,  # Convert days to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Strict",
+            samesite="Lax",
         )
         logger.success("User signed in successfully with email: {}", data.email)
         return {"message": "User signed in successfully"}
@@ -443,7 +443,7 @@ async def google_callback(request: Request):
             refresh_token,
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Strict",
+            samesite="Lax",
         )
         return response
     except APIException as e:
