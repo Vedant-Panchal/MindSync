@@ -22,7 +22,7 @@ origins = [
     "http://localhost",
     "http://localhost:5173",
     "http://localhost:8000",
-    FRONTEND_URL
+    FRONTEND_URL,
 ]
 APP_ENV = os.environ.get("APP_ENV", "development")
 
