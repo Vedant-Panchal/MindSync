@@ -201,7 +201,7 @@ async def signIn(response: Response, data: VerifyUser):
             value=access_token,
             max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # in seconds
             httponly=True,
-            secure=False,
+            secure=(ENVIRONMENT == "production"),
             samesite="Lax",
         )
         response.set_cookie(

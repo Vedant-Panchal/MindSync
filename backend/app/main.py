@@ -7,7 +7,7 @@ from app.core.security import AuthMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from loguru import logger
 import sys
-from app.core.config import FRONTEND_URL, JWT_SECRET
+from app.core.config import ENVIRONMENT, FRONTEND_URL, JWT_SECRET
 from app.core.exceptions import (
     APIException,
     api_exception_handler,
@@ -24,9 +24,9 @@ origins = [
     "http://localhost:8000",
     FRONTEND_URL,
 ]
-APP_ENV = os.environ.get("APP_ENV", "development")
 
-if APP_ENV == "production":
+
+if ENVIRONMENT == "production":
     docs_url = None
     redoc_url = None
     openapi_url = None
