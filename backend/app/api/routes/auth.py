@@ -112,7 +112,7 @@ async def verify(response: Response, data: create_user):
             max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # convert mins to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
 
         response.set_cookie(
@@ -124,7 +124,7 @@ async def verify(response: Response, data: create_user):
             * 60,  # Convert days to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
         logger.success("User created successfully with email: {}", email)
         return {"message": "User created successfully."}
@@ -202,7 +202,7 @@ async def signIn(response: Response, data: VerifyUser):
             max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # in seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
         response.set_cookie(
             key="refresh_token",
@@ -213,7 +213,7 @@ async def signIn(response: Response, data: VerifyUser):
             * 60,  # Convert days to seconds
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
         logger.success("User signed in successfully with email: {}", data.email)
         return {"message": "User signed in successfully"}
@@ -349,7 +349,7 @@ async def refresh_token(response: Response, refresh_token: str = Cookie(None)):
             max_age=ACCESS_TOKEN_EXPIRES_MINS,
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
         logger.success(
             "Access token refreshed successfully for email: {}", decoded_token["email"]
@@ -436,14 +436,14 @@ async def google_callback(request: Request):
             access_token,
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
         response.set_cookie(
             "refresh_token",
             refresh_token,
             httponly=True,
             secure=(ENVIRONMENT == "production"),
-            samesite="Lax",
+            samesite="None",
         )
         return response
     except APIException as e:

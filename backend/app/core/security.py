@@ -67,7 +67,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,
                         httponly=True,
                         secure=(ENVIRONMENT == "production"),
-                        samesite="Lax",
+                        samesite="None",
                     )
                     return response
                 except Exception as e:
