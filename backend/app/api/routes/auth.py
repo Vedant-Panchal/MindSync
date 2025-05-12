@@ -412,7 +412,7 @@ async def google_callback(request: Request):
         existing_user = get_user_by_email(email)
         if existing_user:
             user = existing_user[0]
-            print("user",user)
+            print("user", user)
             user_id = user.get("id")
             if user.get("oauth_provider") == OAuthType.local.value:
                 response = RedirectResponse(
