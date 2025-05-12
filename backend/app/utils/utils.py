@@ -123,6 +123,7 @@ def submit_draft(user_id: str):
                 rich_text=draft.rich_text,
             )
             data_json = jsonable_encoder(journal)
+            print(f"journal data is {data_json}")
             insert_journal(data_json, db)
 
             for chunk in chunks:

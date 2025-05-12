@@ -510,6 +510,7 @@ def final_response(
     transformed = []
     logger.debug(history)
     for entry in history:
+        print("this is entry", entry)
         transformed.append({"role": "user", "parts": [{"text": entry["user_query"]}]})
         transformed.append(
             {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
