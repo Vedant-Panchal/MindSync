@@ -430,7 +430,7 @@ async def google_callback(request: Request):
         refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 2)
 
         # Set cookies for tokens
-        response = RedirectResponse(url="http://localhost:5173/app/dashboard")
+        response = RedirectResponse(url="https://mindsyncc.vercel.app/dashboard/")
         response.set_cookie(
             "access_token",
             access_token,
