@@ -1,16 +1,16 @@
-import * as z from 'zod';
+import * as z from "zod";
 
 const createEnv = () => {
   const EnvSchema = z.object({
-    API_URL: z.string().default('http://localhost:8000/'),
+    API_URL: z.string().default("https://mindsync.flamin.live"),
   });
 
   const envVars = Object.entries(import.meta.env).reduce<
     Record<string, string>
   >((acc, curr) => {
     const [key, value] = curr;
-    if (key.startsWith('VITE_APP_')) {
-      acc[key.replace('VITE_APP_', '')] = value;
+    if (key.startsWith("VITE_APP_")) {
+      acc[key.replace("VITE_APP_", "")] = value;
     }
     return acc;
   }, {});
@@ -22,8 +22,8 @@ const createEnv = () => {
       `Invalid env provided.
 The following variables are missing or invalid:
 ${Object.entries(parsedEnv.error.flatten().fieldErrors)
-        .map(([k, v]) => `- ${k}: ${v}`)
-        .join('\n')}
+  .map(([k, v]) => `- ${k}: ${v}`)
+  .join("\n")}
 `,
     );
   }

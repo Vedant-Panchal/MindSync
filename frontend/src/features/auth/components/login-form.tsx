@@ -34,7 +34,7 @@ export function LoginForm({
     },
   });
   const handleGoogleLogin = async () => {
-    window.location.href = `http://localhost:8000${API_PATHS.AUTH.GOOGLE_LOGIN}`;
+    window.location.href = `https://mindsync.flamin.live${API_PATHS.AUTH.GOOGLE_LOGIN}`;
   };
   const onSubmit = async (data: LoginInput) => {
     login(data);

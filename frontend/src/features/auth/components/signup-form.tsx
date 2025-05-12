@@ -46,14 +46,14 @@ export function SignUpForm({
   });
   const handleGoogleLogin = async () => {
     try {
-      window.location.href = `http://localhost:8000${API_PATHS.AUTH.GOOGLE_LOGIN}`;
+      window.location.href = `https://mindsync.flamin.live${API_PATHS.AUTH.GOOGLE_LOGIN}`;
     } catch (error: any) {
       console.error("Google login failed:", error);
       if (
         error?.error?.message ===
         "This email is already registered with a password"
       ) {
-        window.location.href = `http://localhost:5173/signin`;
+        window.location.href = `https://mindsyncc.vercel.app/signin`;
         toast.error(
           "This email is already registered. Please log in using your email and password.",
         );
