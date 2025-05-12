@@ -412,7 +412,8 @@ async def google_callback(request: Request):
         existing_user = get_user_by_email(email)
         if existing_user:
             user = existing_user[0]
-            # If the existing user was created via email/password, prevent duplicate Google login
+            print("user",user)
+            user_id = user.get("id")
             if user.get("oauth_provider") == OAuthType.local.value:
                 response = RedirectResponse(
                     url="https://mindsyncc.vercel.app/signin?status=error&message=Email%20already%20registered%20with%20email%20and%20password"
@@ -437,6 +438,7 @@ async def google_callback(request: Request):
 
         # Set cookies for tokens
         response = RedirectResponse(url="https://mindsyncc.vercel.app/app/dashboard/")
+        # response = RedirectResponse(url="http://localhost:5173/app/dashboard/")
         response.set_cookie(
             "access_token",
             access_token,
