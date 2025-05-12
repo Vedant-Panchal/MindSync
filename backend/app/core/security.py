@@ -2,7 +2,7 @@ from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import HTTPException, Request, Response, status
 from jose import JWTError
-from app.core.config import ACCESS_TOKEN_EXPIRES_MINS, ENVIRONMENT
+from app.core.config import ACCESS_TOKEN_EXPIRES_MINS, ENVIRONMENT, FRONTEND_URL
 from app.services.auth import decode_token, create_token
 from app.db.schemas.user import CreateOtpType
 from app.core.exceptions import APIException
@@ -106,6 +106,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 media_type="application/json",
             )
             # Ensure CORS headers are included even in error responses
-            response.headers["Access-Control-Allow-Origin"] = "http://localhost:5173"
+            response.headers["Access-Control-Allow-Origin"] = FRONTEND_URL
             response.headers["Access-Control-Allow-Credentials"] = "true"
             return response
