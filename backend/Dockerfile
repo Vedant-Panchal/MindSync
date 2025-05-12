@@ -23,6 +23,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Expose FastAPI port
 EXPOSE 8000
 
-
-# Run using poetry-managed venv
 CMD ["fastapi", "run", "./app/main.py", "--port", "8000","--workers","2"]
