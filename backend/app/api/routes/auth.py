@@ -318,8 +318,14 @@ async def reset_password_verify(data: ResetPasswordRequest):
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    cookie_args = {
+        "path": "/",
+        "secure": True,
+        "samesite": "None",
+    }
+
+    response.delete_cookie("access_token", **cookie_args)
+    response.delete_cookie("refresh_token", **cookie_args)
     logger.success("User logged out successfully")
     return {"message": "User logged out successfully"}
 
@@ -399,7 +405,7 @@ async def google_callback(request: Request):
             access_token=access_token,
         )
         email = user_info.get("email")
-        name = user_info.get("name")
+        name: message.Any | None = user_info.get("name")
         google_id = user_info.get("sub")
 
         user_id = str(uuid4())
@@ -430,7 +436,7 @@ async def google_callback(request: Request):
         refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 2)
 
         # Set cookies for tokens
-        response = RedirectResponse(url="https://mindsyncc.vercel.app/app/dashboard/")
+        response = RedirectResponse(url="https://c.vercel.app/app/dashboard/")
         response.set_cookie(
             "access_token",
             access_token,

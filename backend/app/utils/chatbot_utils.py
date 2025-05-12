@@ -644,6 +644,7 @@ def final_response(
                 "message": combined_message,
             }
         # logger.info(f"this is response : {full_response}")
+        print("parsed response is", parsed)
         query_object = {"user_query": user_query, "response": parsed}
         history.append(query_object)
         dumped_history = json.dumps(history)

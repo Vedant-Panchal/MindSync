@@ -3,6 +3,7 @@ import * as z from "zod";
 const createEnv = () => {
   const EnvSchema = z.object({
     API_URL: z.string().default("https://mindsync.flamin.live"),
+    // API_URL: z.string().default("http://localhost:8000"),
   });
 
   const envVars = Object.entries(import.meta.env).reduce<
