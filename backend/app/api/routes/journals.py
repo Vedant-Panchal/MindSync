@@ -138,6 +138,7 @@ async def save_draft(request: Request):
                 detail="You Have Submitted Today's Journal, Come again Tomorrow",
                 message="You Have Submitted Today's Journal",
             )
+        print("userID", user["id"])
         variable_test = submit_draft(user["id"])
         # logger.debug(f"submit_draft result: {variable_test}")
         return {"message": variable_test}
@@ -160,6 +161,7 @@ async def get_user_analysis(
 ):
     try:
         user = getattr(request.state, "user", None)
+        print("user", user)
 
         if not user:
             return {"message": "User not authenticated.", "data": {}}
