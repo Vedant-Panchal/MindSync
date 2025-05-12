@@ -70,7 +70,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                         value=new_access_token,
                         max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,
                         httponly=True,
-                        secure=secure,
+                        secure=True if ENVIRONMENT == "production" else False,
                         samesite="None",
                     )
                     return response
