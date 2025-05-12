@@ -53,7 +53,7 @@ app.include_router(journals.router, prefix="/api/v1/journals", tags=["Journals"]
 app.include_router(chatbot.router, prefix="/api/v1/chat", tags=["Chatbot"])
 
 
-@app.get("/heartbeat", tags=["Health Check"])
+@app.get("/health", tags=["Health Check"])
 async def heartbeat():
     return {
         "status": "ok",

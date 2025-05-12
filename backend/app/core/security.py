@@ -29,6 +29,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
     # print("IN Security")
     async def dispatch(self, request: Request, call_next):
+        if ENVIRONMENT == "production":
+            secure = True
+        else:
+            secure = False
         try:
             # Skip ALL OPTIONS requests to let CORSMiddleware handle them
             if request.method == "OPTIONS":
