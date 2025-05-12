@@ -40,11 +40,6 @@ router = APIRouter()
 
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 
-if ENVIRONMENT == "production":
-    secure = True
-else:
-    secure = False
-
 
 @router.get("/me")
 async def get_me(request: Request):
