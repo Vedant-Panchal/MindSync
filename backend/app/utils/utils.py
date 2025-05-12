@@ -95,6 +95,7 @@ def analyze_mood(text: str) -> dict:
 
 
 def submit_draft(user_id: str):
+    print(f"User ID: {user_id}")
     today = datetime.now(timezone.utc).date()
     today_key = date.today().isoformat()
     print(f"Draft:{user_id}:{today_key}")
