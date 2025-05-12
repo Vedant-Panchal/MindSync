@@ -7,7 +7,7 @@ from app.core.security import AuthMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from loguru import logger
 import sys
-from app.core.config import JWT_SECRET
+from app.core.config import FRONTEND_URL, JWT_SECRET
 from app.core.exceptions import (
     APIException,
     api_exception_handler,
@@ -22,6 +22,7 @@ origins = [
     "http://localhost",
     "http://localhost:5173",
     "http://localhost:8000",
+    FRONTEND_URL
 ]
 APP_ENV = os.environ.get("APP_ENV", "development")
 
@@ -47,7 +48,7 @@ app.add_middleware(middleware_class=AuthMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
 app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
-app.include_router(auth.router, prefix="/auth/v1", tags=["Authentication"])
+app.include_router(auth.router, prefix="/api/auth/v1", tags=["Authentication"])
 app.include_router(journals.router, prefix="/api/v1/journals", tags=["Journals"])
 app.include_router(chatbot.router, prefix="/api/v1/chat", tags=["Chatbot"])
 

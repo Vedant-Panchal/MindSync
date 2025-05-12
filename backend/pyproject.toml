@@ -1,4 +1,5 @@
 [tool.poetry]
+package-mode = false
 name = "app"
 version = "1.1.0"
 description = ""
@@ -6,7 +7,8 @@ authors = ["Vedant Panchal <VEDANTPANCHAL.ict22@adaniuni.ac.in>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-fastapi = ">=0.115.8,<0.116.0"
+python = "^3.11"
+fastapi = {extras = ["standard"], version = "^0.115.12"}
 uvicorn = ">=0.34.0,<0.35.0"
 python-jose = ">=3.3.0,<4.0.0"
 passlib = {extras = ["bcrypt"], version = ">=1.7.4,<2.0.0"}
