@@ -580,6 +580,14 @@ def final_response(
             Use natural language and incorporate context from the conversation history if available.
             Always ensure the response is properly escaped JSON that can be parsed with json.loads().
 
+
+            Respond in JSON format like:
+        {{
+            "title": "unknown",
+            "date": "NA",
+            "message": "your response here"
+        }}
+
         """
 
     model = genai.GenerativeModel(
@@ -639,6 +647,7 @@ def final_response(
                     for i, entry in enumerate(parsed)
                 ]
             )
+            print("combined message is", combined_message)
             parsed = {
                 "title": "List of Journal Entries",
                 "date": str(today),
