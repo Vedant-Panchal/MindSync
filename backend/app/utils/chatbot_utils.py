@@ -521,6 +521,7 @@ def final_response(
             prompt = f"""
             This is the user query = '{user_query}'.
             There is no conversation history available.
+            Only respond if the user query is clearly related to journals, journal content, or journal history.
             Respond in JSON format like:
             {{
                 "title": "unknown",
@@ -532,6 +533,7 @@ def final_response(
             prompt = f"""
             This is the user query = '{user_query}'.
             Respond to this query using the conversation history provided.
+            Only respond if the user query is clearly related to journals, journal content, or journal history.
             Use natural language and incorporate context from the history to answer the query.
             Respond in JSON format like:
             {{
@@ -544,6 +546,7 @@ def final_response(
         prompt = f"""
         This is the user query = '{user_query}'.
         The journal data is empty.
+        Only respond if the user query is clearly related to journals, journal content, or journal history.
         Respond in JSON format like:
         {{
             "title": "unknown",

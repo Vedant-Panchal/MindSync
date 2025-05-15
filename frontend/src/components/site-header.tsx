@@ -23,6 +23,8 @@ export function SiteHeader() {
     },
     onSuccess: (data) => {
       toast.success("History Deleted");
+      setMessages([]);
+      setLastMessage(null);
     },
     onError: (error) => {
       toast.error(error.message);
