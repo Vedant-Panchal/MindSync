@@ -522,6 +522,10 @@ def final_response(
             This is the user query = '{user_query}'.
             There is no conversation history available.
             Only respond if the user query is clearly related to journals, journal content, or journal history.
+            If the query is unrelated (e.g. about movies, news, random facts), respond with:
+            {{
+                "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+            }}
             Respond in JSON format like:
             {{
                 "title": "unknown",
@@ -534,6 +538,10 @@ def final_response(
             This is the user query = '{user_query}'.
             Respond to this query using the conversation history provided.
             Only respond if the user query is clearly related to journals, journal content, or journal history.
+            If the query is unrelated (e.g. about movies, news, random facts), respond with:
+            {{
+                "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+            }}
             Use natural language and incorporate context from the history to answer the query.
             Respond in JSON format like:
             {{
@@ -547,6 +555,10 @@ def final_response(
         This is the user query = '{user_query}'.
         The journal data is empty.
         Only respond if the user query is clearly related to journals, journal content, or journal history.
+        If the query is unrelated (e.g. about movies, news, random facts), respond with:
+        {{
+            "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+        }}
         Respond in JSON format like:
         {{
             "title": "unknown",
