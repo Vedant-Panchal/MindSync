@@ -434,7 +434,7 @@ async def google_callback(request: Request):
             db.table("users").insert(jsonable_encoder(new_user)).execute()
         userData = CreateOtpType(email=email, id=user_id, username=name)
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
-        refresh_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS * 2)
+        refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60)
 
         # Set cookies for tokens
         response = RedirectResponse(url="https://mindsyncc.vercel.app/app/dashboard/")

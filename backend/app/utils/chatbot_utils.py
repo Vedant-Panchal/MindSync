@@ -524,7 +524,7 @@ def final_response(
             Only respond if the user query is clearly related to journals, journal content, or journal history.
             If the query is unrelated (e.g. about movies, news, random facts), respond with:
             {{
-                "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
             }}
             Respond in JSON format like:
             {{
@@ -540,7 +540,7 @@ def final_response(
             Only respond if the user query is clearly related to journals, journal content, or journal history.
             If the query is unrelated (e.g. about movies, news, random facts), respond with:
             {{
-                "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
             }}
             Use natural language and incorporate context from the history to answer the query.
             Respond in JSON format like:
@@ -557,7 +557,7 @@ def final_response(
         Only respond if the user query is clearly related to journals, journal content, or journal history.
         If the query is unrelated (e.g. about movies, news, random facts), respond with:
         {{
-            "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+            "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
         }}
         Respond in JSON format like:
         {{
@@ -574,7 +574,7 @@ def final_response(
         Only respond if the user query is clearly related to journals, journal content, or journal history.
         If the query is unrelated (e.g. about movies, news, random facts), respond with:
         {{
-            "message": "I'm here to help with your journal-related questions. This query doesn't seem related to your journals or past entries, so I won't generate a response."
+            "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
         }}
 
             When responding to journal-related queries, format your response with proper markdown:
