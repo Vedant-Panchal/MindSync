@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 import json
-from typing import Awaitable, Dict, List
+from typing import Awaitable, Dict, List, Optional
 from uuid import UUID, uuid4
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
@@ -94,10 +94,12 @@ def analyze_mood(text: str) -> dict:
     return {"dominant": dominant_mood, **top_moods}
 
 
-def submit_draft(user_id: str):
+def submit_draft(user_id: str,journal_date : Optional[str] = None):
     print(f"User ID: {user_id}")
     today = datetime.now(timezone.utc).date()
     today_key = date.today().isoformat()
+    if journal_date:
+        today_key = journal_date
     print(f"Draft:{user_id}:{today_key}")
     draft_data = redis_client.get(f"Draft:{user_id}:{today_key}")
     print(draft_data)

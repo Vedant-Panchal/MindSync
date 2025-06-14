@@ -22,7 +22,7 @@ from app.utils.utils import pre_process_journal, submit_draft
 from app.utils.chatbot_utils import (
     final_response,
     get_journals_by_date,
-    query_function,
+    # query_function,
     query_parser,
 )
 
@@ -81,6 +81,38 @@ def get_all_journal(
 
 
 @router.post("/draft/add")
+async def save_drafts(request: Request, draft: DraftRequest):
+    user = getattr(request.state, "user", None)
+    logger.info(f"User: {user}, User ID type: {type(user['id']) if user else 'None'}")
+
+    try:
+        today = date.today().isoformat()
+        redis_key = f"Draft:{user['id']}:{today}"
+        tags = [item["text"] for item in draft.tags]
+        draft_data = {
+            "content": draft.plain_text,
+            "date": today,
+            "user_id": user["id"],
+            "tags": tags,
+            "title": draft.title,
+            "rich_text": draft.rich_text,
+        }
+
+        logger.info(f"Draft data prepared: {draft_data}, Type: {type(draft_data)}")
+        store_draft(draft_data, redis_key)
+        logger.debug(f"Draft stored in Redis with key: {redis_key}")
+
+        return {"message": "Stored Data In Redis", "draft_data": draft_data}
+
+    except Exception as e:
+        logger.exception(f"Error saving draft: {str(e)}")
+        raise APIException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+            message="An Error Has Occurred",
+        )
+    
+@router.post("/draft/add/date")
 async def save_drafts(request: Request, draft: DraftRequest):
     user = getattr(request.state, "user", None)
     logger.info(f"User: {user}, User ID type: {type(user['id']) if user else 'None'}")

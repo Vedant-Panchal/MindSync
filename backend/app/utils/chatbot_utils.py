@@ -55,10 +55,13 @@ GO_EMOTION_LABELS = [
     "neutral",
 ]
 genai.configure(api_key=GEMINI_KEY)
-model = genai.GenerativeModel("gemini-2.5-flash-preview-04-17", safety_settings=safety)
+model = genai.GenerativeModel("gemini-1.5-flash", safety_settings=safety)
 
 
 today = datetime.today().strftime("%Y-%m-%d")
+
+
+print(today)
 
 
 def query_parser(user_query: str):
@@ -66,7 +69,7 @@ def query_parser(user_query: str):
     You are a helpful assistant for an AI journaling app.
     Your job is to parse a user’s natural language query and any accompanying recollections into structured JSON to help the app search journal entries or determine if the query is purely conversational.
     Return ONLY JSON with these keys:
-    1. "date_range": {{"start": "...", "end": "..."}} — extract any specific or relative time references like "last month", "yesterday", "April 6", etc. Use today’s date as: {today}
+    1. "date_range": {{"start": "YYYY-MM-DD Or None ", "end": "YYYY-MM-DD of None"}} — extract any specific or relative time references like "last month", "yesterday", "April 6", etc. and Convert it to "YYYY-MM-DD" Format. Use today’s date as: {today}
     2. "moods": List of relevant emotions from this list (account for negation): {GO_EMOTION_LABELS}
     3. "tags": Any related tags such as activities (e.g. study, code, work), subjects (e.g. networks), people (e.g. classmates, teacher), or contexts (e.g. class, lecture, exam). Use **present tense** for activities and ensure that any verb forms like "working" are replaced by the correct noun form like "work". Give it in **singular** form where applicable.
     4. "title" : Provide a concise one-sentence title based on the user’s query that accurately captures the core subject for effective semantic search. If the query doesn’t explicitly mention a title, return an empty string.
@@ -166,6 +169,10 @@ def filter_by_title(title: str, journal_ids: list):
 
 def filter_by_embeddings(topic: str, journal_ids: list):
     try:
+
+        print("Filtering journals by embeddings...")
+
+
         if not journal_ids or len(journal_ids) == 0:
             return []
         topic_embedding = direct_embedding(topic)
@@ -243,256 +250,300 @@ def filter_by_tags(tags: list, data):
         )
 
 
-# Define tools
-tools = [
-    {
-        "function_declarations": [
-            {
-                "name": "get_journals_by_date",
-                "description": "Fetch journal entries for a specific user within a date range. Always run this first to filter by date.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "user_id": {
-                            "type": "string",
-                            "description": "The ID of the user querying their journals.",
-                        },
-                        "start_date": {
-                            "type": "string",
-                            "description": "Start date in ISO format (e.g., '2025-04-06') or relative term (e.g., 'yesterday').",
-                        },
-                        "end_date": {
-                            "type": "string",
-                            "description": "End date in ISO format (e.g., '2025-04-06') or relative term (e.g., 'today').",
-                        },
-                    },
-                    "required": ["user_id"],
-                },
-            },
-            {
-                "name": "filter_by_title",
-                "description": "Filter journals semantically based on a title using title embeddings.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "title": {
-                            "type": "string",
-                            "description": "The title to search for (e.g., 'Cricket Match').",
-                        },
-                        "journal_ids": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "List of journal IDs to filter.",
-                        },
-                    },
-                    "required": ["title", "journal_ids"],
-                },
-            },
-            {
-                "name": "filter_by_embeddings",
-                "description": "Filter journals semantically based on a user_query using embeddings.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "topic": {
-                            "type": "string",
-                            "description": "The main subject or topic to search for (e.g., 'work', 'cricket').",
-                        },
-                        "journal_ids": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "List of journal IDs to filter.",
-                        },
-                    },
-                    "required": ["topic", "journal_ids"],
-                },
-            },
-            {
-                "name": "filter_by_moods",
-                "description": "Filter journals based on a list of moods.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "moods": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "List of moods to filter by (e.g., ['joy', 'sadness']).",
-                        },
-                        "data": {
-                            "type": "array",
-                            "items": {"type": "object"},
-                            "description": "List of journal entries to filter.",
-                        },
-                    },
-                    "required": ["data"],
-                },
-            },
-            {
-                "name": "filter_by_tags",
-                "description": "Filter journals based on a list of tags.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "tags": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "List of tags to filter by (e.g., ['work', 'park']).",
-                        },
-                        "data": {
-                            "type": "array",
-                            "items": {"type": "object"},
-                            "description": "List of journal entries to filter.",
-                        },
-                    },
-                    "required": ["data"],
-                },
-            },
-        ]
-    }
-]
+# # Define tools
+# tools = [
+#     {
+#         "function_declarations": [
+#             {
+#                 "name": "get_journals_by_date",
+#                 "description": "Fetch journal entries for a specific user within a date range. Always run this first to filter by date.",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "user_id": {
+#                             "type": "string",
+#                             "description": "The ID of the user querying their journals.",
+#                         },
+#                         "start_date": {
+#                             "type": "string",
+#                             "description": "Start date in ISO format (e.g., '2025-04-06') or relative term (e.g., 'yesterday').",
+#                         },
+#                         "end_date": {
+#                             "type": "string",
+#                             "description": "End date in ISO format (e.g., '2025-04-06') or relative term (e.g., 'today').",
+#                         },
+#                     },
+#                     "required": ["user_id"],
+#                 },
+#             },
+#             {
+#                 "name": "filter_by_title",
+#                 "description": "Filter journals semantically based on a title using title embeddings.",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "title": {
+#                             "type": "string",
+#                             "description": "The title to search for (e.g., 'Cricket Match').",
+#                         },
+#                         "journal_ids": {
+#                             "type": "array",
+#                             "items": {"type": "string"},
+#                             "description": "List of journal IDs to filter.",
+#                         },
+#                     },
+#                     "required": ["title", "journal_ids"],
+#                 },
+#             },
+#             {
+#                 "name": "filter_by_embeddings",
+#                 "description": "Filter journals semantically based on a user_query using embeddings.",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "topic": {
+#                             "type": "string",
+#                             "description": "The main subject or topic to search for (e.g., 'work', 'cricket').",
+#                         },
+#                         "journal_ids": {
+#                             "type": "array",
+#                             "items": {"type": "string"},
+#                             "description": "List of journal IDs to filter.",
+#                         },
+#                     },
+#                     "required": ["topic", "journal_ids"],
+#                 },
+#             },
+#             {
+#                 "name": "filter_by_moods",
+#                 "description": "Filter journals based on a list of moods.",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "moods": {
+#                             "type": "array",
+#                             "items": {"type": "string"},
+#                             "description": "List of moods to filter by (e.g., ['joy', 'sadness']).",
+#                         },
+#                         "data": {
+#                             "type": "array",
+#                             "items": {"type": "object"},
+#                             "description": "List of journal entries to filter.",
+#                         },
+#                     },
+#                     "required": ["data"],
+#                 },
+#             },
+#             {
+#                 "name": "filter_by_tags",
+#                 "description": "Filter journals based on a list of tags.",
+#                 "parameters": {
+#                     "type": "object",
+#                     "properties": {
+#                         "tags": {
+#                             "type": "array",
+#                             "items": {"type": "string"},
+#                             "description": "List of tags to filter by (e.g., ['work', 'park']).",
+#                         },
+#                         "data": {
+#                             "type": "array",
+#                             "items": {"type": "object"},
+#                             "description": "List of journal entries to filter.",
+#                         },
+#                     },
+#                     "required": ["data"],
+#                 },
+#             },
+#         ]
+#     }
+# ]
 
-model = genai.GenerativeModel("gemini-2.5-flash-preview-04-17", tools=tools)
+# model = genai.GenerativeModel("gemini-1.5-flash", tools=tools)
 
 
-def query_function(user_id: str, user_query: str, filter_parameters):
+# def query_function(user_id: str, user_query: str, filter_parameters):
 
-    # Prepare prompt with filter_parameters and user_id
-    # filter_params_str = str(filter_parameters if filter_parameters else {})
-    prompt = f"""
-    Use filter_parameters ({filter_parameters}) and 
-    user_id ({user_id}) as arguments, 
-    and appropriate functions to fetch and filter journal data. 
-    Always start with get_journals_by_date to filter by date using the date_range.start and date_range.end, 
-    then apply other filters (filter_by_title, filter_by_embeddings, filter_by_moods, filter_by_tags) 
-    as needed based on the query and filter_parameters. 
-    Respond naturally with the results: {user_query}. 
-    The response should return only the filtered journal entries based on the parsed query."""
+#     # Prepare prompt with filter_parameters and user_id
+#     # filter_params_str = str(filter_parameters if filter_parameters else {})
+#     prompt = f"""
+#     Use filter_parameters ({filter_parameters}) and 
+#     user_id ({user_id}) as arguments, 
+#     and appropriate functions to fetch and filter journal data. 
+#     Always start with get_journals_by_date to filter by date using the date_range.start and date_range.end, 
+#     then apply other filters (filter_by_title, filter_by_embeddings, filter_by_moods, filter_by_tags) 
+#     as needed based on the query and filter_parameters. 
+#     Respond naturally with the results: {user_query}. 
+#     The response should return only the filtered journal entries based on the parsed query."""
 
-    try:
-        # Generate content with function calling
-        response = model.generate_content(contents=prompt, tools=tools)
-        logger.debug(f"response is this : {response}")
-        # Extract function calls from the response
-        function_calls = response.candidates[0].content.parts
+#     try:
+#         # Generate content with function calling
+#         response = model.generate_content(contents=prompt, tools=tools)
+#         logger.debug(f"response is this : {response}")
+#         # Extract function calls from the response
+#         function_calls = response.candidates[0].content.parts
 
-        journals = []
-        current_data = []
-        semantic_result = []
-        title_result = []
+#         journals = []
+#         current_data = []
+#         semantic_result = []
+#         title_result = []
 
-        date_called = False
-        for part in function_calls:
-            if part.function_call:
-                function_name = part.function_call.name
-                args = part.function_call.args
+#         date_called = False
+#         for part in function_calls:
+#             if part.function_call:
+#                 function_name = part.function_call.name
+#                 args = part.function_call.args
 
-                if function_name == "get_journals_by_date" and not date_called:
-                    start_date = args.get(
-                        "start_date",
-                        (
-                            filter_parameters.get("date_range", {}).get("start")
-                            if filter_parameters
-                            else None
-                        ),
-                    )
-                    end_date = args.get(
-                        "end_date",
-                        (
-                            filter_parameters.get("date_range", {}).get("end")
-                            if filter_parameters
-                            else None
-                        ),
-                    )
-                    if start_date and not end_date:
-                        end_date = (
-                            start_date  # Handle single-day queries if end is missing
-                        )
-                    journals = get_journals_by_date(user_id, start_date, end_date)
-                    current_data = journals
-                    date_called = True
-                elif date_called:
-                    if function_name == "filter_by_title":
-                        title = args.get(
-                            "title",
-                            (
-                                filter_parameters.get("title", "")
-                                if filter_parameters
-                                else (
-                                    user_query.split()[-1]
-                                    if "titled" in user_query.lower()
-                                    else None
-                                )
-                            ),
-                        )
-                        journal_ids = (
-                            [j["id"] for j in current_data] if current_data else []
-                        )
-                        if title:
-                            title_result = filter_by_title(title, journal_ids)
+#                 if function_name == "get_journals_by_date" and not date_called:
+#                     start_date = args.get(
+#                         "start_date",
+#                         (
+#                             filter_parameters.get("date_range", {}).get("start")
+#                             if filter_parameters
+#                             else None
+#                         ),
+#                     )
+#                     end_date = args.get(
+#                         "end_date",
+#                         (
+#                             filter_parameters.get("date_range", {}).get("end")
+#                             if filter_parameters
+#                             else None
+#                         ),
+#                     )
+#                     if start_date and not end_date:
+#                         end_date = (
+#                             start_date  # Handle single-day queries if end is missing
+#                         )
+#                     journals = get_journals_by_date(user_id, start_date, end_date)
+#                     current_data = journals
+#                     date_called = True
+#                 elif date_called:
+#                     if function_name == "filter_by_title":
+#                         title = args.get(
+#                             "title",
+#                             (
+#                                 filter_parameters.get("title", "")
+#                                 if filter_parameters
+#                                 else (
+#                                     user_query.split()[-1]
+#                                     if "titled" in user_query.lower()
+#                                     else None
+#                                 )
+#                             ),
+#                         )
+#                         journal_ids = (
+#                             [j["id"] for j in current_data] if current_data else []
+#                         )
+#                         if title:
+#                             title_result = filter_by_title(title, journal_ids)
 
-                    if function_name == "filter_by_embeddings":
-                        topic = args.get(
-                            "topic",
-                            (
-                                user_query.split()[-1]
-                                if any(
-                                    word in user_query.lower()
-                                    for word in ["about", "on"]
-                                )
-                                else user_query
-                            ),
-                        )
-                        journal_ids = (
-                            [j["id"] for j in current_data] if current_data else []
-                        )
-                        semantic_result = filter_by_embeddings(topic, journal_ids)
+#                     if function_name == "filter_by_embeddings":
+#                         topic = args.get(
+#                             "topic",
+#                             (
+#                                 user_query.split()[-1]
+#                                 if any(
+#                                     word in user_query.lower()
+#                                     for word in ["about", "on"]
+#                                 )
+#                                 else user_query
+#                             ),
+#                         )
+#                         journal_ids = (
+#                             [j["id"] for j in current_data] if current_data else []
+#                         )
+#                         semantic_result = filter_by_embeddings(topic, journal_ids)
 
-                    if function_name == "filter_by_moods":
-                        moods = args.get("moods", filter_parameters.get("moods", []))
-                        current_data = filter_by_moods(current_data, moods)
+#                     if function_name == "filter_by_moods":
+#                         moods = args.get("moods", filter_parameters.get("moods", []))
+#                         current_data = filter_by_moods(current_data, moods)
 
-                    if function_name == "filter_by_tags":
-                        tags = args.get("tags", filter_parameters.get("tags", []))
-                        current_data = filter_by_tags(tags, current_data)
+#                     if function_name == "filter_by_tags":
+#                         tags = args.get("tags", filter_parameters.get("tags", []))
+#                         current_data = filter_by_tags(tags, current_data)
 
-        # Generate natural language response
-        if not current_data:
-            response_text = (
-                f"Sorry, I couldn’t find any journals matching '{user_query}'."
-            )
-        elif len(current_data) == 1:
-            journal = current_data[0]
-            date = journal.get("date", "an unknown date")
-            title = journal.get("title", "Untitled")
-            text = journal.get("text", "No details available")
-            response_text = (
-                f"Here’s the journal titled '{title}' you wrote on {date}: {text}"
-            )
-        else:
-            response_text = f"I found multiple journals matching '{user_query}'. Here are the details:\n"
-            for journal in current_data:
-                date = journal.get("date", "an unknown date")
-                title = journal.get("title", "Untitled")
-                text = journal.get("text", "No details available")
-                response_text += f"- Titled '{title}' on {date}: {text}\n"
+#         # Generate natural language response
+#         if not current_data:
+#             response_text = (
+#                 f"Sorry, I couldn’t find any journals matching '{user_query}'."
+#             )
+#         elif len(current_data) == 1:
+#             journal = current_data[0]
+#             date = journal.get("date", "an unknown date")
+#             title = journal.get("title", "Untitled")
+#             text = journal.get("text", "No details available")
+#             response_text = (
+#                 f"Here’s the journal titled '{title}' you wrote on {date}: {text}"
+#             )
+#         else:
+#             response_text = f"I found multiple journals matching '{user_query}'. Here are the details:\n"
+#             for journal in current_data:
+#                 date = journal.get("date", "an unknown date")
+#                 title = journal.get("title", "Untitled")
+#                 text = journal.get("text", "No details available")
+#                 response_text += f"- Titled '{title}' on {date}: {text}\n"
 
-        return {
-            "message": response_text,
-            "data": current_data,
-            "Semantic Result": semantic_result,
-            "title_search": title_result,
-        }
+#         return {
+#             "message": response_text,
+#             "data": current_data,
+#             "Semantic Result": semantic_result,
+#             "title_search": title_result,
+#         }
 
-    except APIException as e:
-        raise e
-    except Exception as e:
-        raise APIException(
-            status_code=500,
-            detail=str(e),
-            message="Error processing user query with function calling",
+#     except APIException as e:
+#         raise e
+#     except Exception as e:
+#         raise APIException(
+#             status_code=500,
+#             detail=str(e),
+#             message="Error processing user query with function calling",
+#         )
+
+def get_Chat_data(user_query : str,user_id:str,filter_params:dict):
+    """
+    Function to get chat data based on user query and filter parameters.
+    It uses the query_function to fetch and filter journal data.
+    """
+    start_date = filter_params.get("date_range", {}).get("start")
+    end_date = filter_params.get("date_range", {}).get("end")
+    title_search = filter_params.get("title", "")
+    filtered_data = get_journals_by_date(user_id, start_date, end_date)
+    journal_ids = []
+    for entry in filtered_data:
+        journal_ids.append(entry["id"])
+    title_semantic_result = []
+    if(title_search != ""):
+        title_semantic_result = filter_by_title(title_search, journal_ids)
+
+    print("Started Semantic Search : ")
+    print("Journal IDs are", journal_ids)
+    semantic_result = filter_by_embeddings(user_query, journal_ids)
+
+    # print("Semantic result is", semantic_result)
+
+    if "moods" in filter_params and len(filter_params["moods"]) > 0:
+        filtered_data = filter_by_moods(
+            filtered_data, filter_params["moods"]
+        )
+    filter_data_by_tags = []
+    if "tags" in filter_params and len(filter_params["tags"]) > 0:
+        filter_data_by_tags = filter_by_tags(
+            filter_params["tags"], filtered_data
         )
 
 
+    # print("filtered data by tags is", filter_data_by_tags)
+    return {
+            "data": filtered_data,
+            "Semantic Result": semantic_result,
+            "title_search": title_semantic_result,
+        }
+
+
+    
+
+
+    
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 
@@ -606,7 +657,7 @@ def final_response(
         """
 
     model = genai.GenerativeModel(
-        "gemini-2.5-flash-preview-04-17",
+        "gemini-1.5-flash",
         safety_settings=[
             {
                 "category": "HARM_CATEGORY_HARASSMENT",

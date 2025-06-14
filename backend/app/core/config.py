@@ -43,3 +43,5 @@ FRONTEND_URL: str = os.getenv("FRONTEND_URL")
 # logger.success("Google Redirect Uri : {google_uri} 🔑", google_uri=GOOGLE_URI)
 # logger.success("Sentence To Vector : {model_vector} 🔑", model_vector=MODEL_VECTOR)
 # logger.success("Gemini Key : {gemini_key} 🔑", gemini_key=GEMINI_KEY)
+
+

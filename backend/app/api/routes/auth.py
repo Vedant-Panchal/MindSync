@@ -416,6 +416,7 @@ async def google_callback(request: Request):
             user_id = user.get("id")
             if user.get("oauth_provider") == OAuthType.local.value:
                 response = RedirectResponse(
+                    # url="http://localhost:5173/signin?status=error&message=Email%20already%20registered%20with%20email%20and%20password"
                     url="https://mindsyncc.vercel.app/signin?status=error&message=Email%20already%20registered%20with%20email%20and%20password"
                 )
                 return response
