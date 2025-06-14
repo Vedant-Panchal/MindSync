@@ -172,7 +172,6 @@ def filter_by_embeddings(topic: str, journal_ids: list):
 
         print("Filtering journals by embeddings...")
 
-
         if not journal_ids or len(journal_ids) == 0:
             return []
         topic_embedding = direct_embedding(topic)
@@ -366,13 +365,13 @@ def filter_by_tags(tags: list, data):
 #     # Prepare prompt with filter_parameters and user_id
 #     # filter_params_str = str(filter_parameters if filter_parameters else {})
 #     prompt = f"""
-#     Use filter_parameters ({filter_parameters}) and 
-#     user_id ({user_id}) as arguments, 
-#     and appropriate functions to fetch and filter journal data. 
-#     Always start with get_journals_by_date to filter by date using the date_range.start and date_range.end, 
-#     then apply other filters (filter_by_title, filter_by_embeddings, filter_by_moods, filter_by_tags) 
-#     as needed based on the query and filter_parameters. 
-#     Respond naturally with the results: {user_query}. 
+#     Use filter_parameters ({filter_parameters}) and
+#     user_id ({user_id}) as arguments,
+#     and appropriate functions to fetch and filter journal data.
+#     Always start with get_journals_by_date to filter by date using the date_range.start and date_range.end,
+#     then apply other filters (filter_by_title, filter_by_embeddings, filter_by_moods, filter_by_tags)
+#     as needed based on the query and filter_parameters.
+#     Respond naturally with the results: {user_query}.
 #     The response should return only the filtered journal entries based on the parsed query."""
 
 #     try:
@@ -499,7 +498,8 @@ def filter_by_tags(tags: list, data):
 #             message="Error processing user query with function calling",
 #         )
 
-def get_Chat_data(user_query : str,user_id:str,filter_params:dict):
+
+def get_Chat_data(user_query: str, user_id: str, filter_params: dict):
     """
     Function to get chat data based on user query and filter parameters.
     It uses the query_function to fetch and filter journal data.
@@ -512,7 +512,7 @@ def get_Chat_data(user_query : str,user_id:str,filter_params:dict):
     for entry in filtered_data:
         journal_ids.append(entry["id"])
     title_semantic_result = []
-    if(title_search != ""):
+    if title_search != "":
         title_semantic_result = filter_by_title(title_search, journal_ids)
 
     print("Started Semantic Search : ")
@@ -522,28 +522,19 @@ def get_Chat_data(user_query : str,user_id:str,filter_params:dict):
     # print("Semantic result is", semantic_result)
 
     if "moods" in filter_params and len(filter_params["moods"]) > 0:
-        filtered_data = filter_by_moods(
-            filtered_data, filter_params["moods"]
-        )
+        filtered_data = filter_by_moods(filtered_data, filter_params["moods"])
     filter_data_by_tags = []
     if "tags" in filter_params and len(filter_params["tags"]) > 0:
-        filter_data_by_tags = filter_by_tags(
-            filter_params["tags"], filtered_data
-        )
-
+        filter_data_by_tags = filter_by_tags(filter_params["tags"], filtered_data)
 
     # print("filtered data by tags is", filter_data_by_tags)
     return {
-            "data": filtered_data,
-            "Semantic Result": semantic_result,
-            "title_search": title_semantic_result,
-        }
+        "data": filtered_data,
+        "Semantic Result": semantic_result,
+        "title_search": title_semantic_result,
+    }
 
 
-    
-
-
-    
 import google.generativeai as genai
 from typing import List, Dict, Any, Optional
 

@@ -92,7 +92,7 @@ async def getQuery(request: Request, user_query: ChatbotType):
             #     filter_params,
             # )
 
-            manual_data = get_Chat_data(user_query.query,user["id"],filter_params)
+            manual_data = get_Chat_data(user_query.query, user["id"], filter_params)
 
             # logger.info(f'result is : {result}')
             logger.debug(f"Query function result: {manual_data["data"]}")

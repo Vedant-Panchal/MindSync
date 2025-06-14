@@ -111,7 +111,8 @@ async def save_drafts(request: Request, draft: DraftRequest):
             detail=str(e),
             message="An Error Has Occurred",
         )
-    
+
+
 @router.post("/draft/add/date")
 async def save_drafts(request: Request, draft: DraftRequest):
     user = getattr(request.state, "user", None)

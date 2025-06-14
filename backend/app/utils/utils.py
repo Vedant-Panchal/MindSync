@@ -94,7 +94,7 @@ def analyze_mood(text: str) -> dict:
     return {"dominant": dominant_mood, **top_moods}
 
 
-def submit_draft(user_id: str,journal_date : Optional[str] = None):
+def submit_draft(user_id: str, journal_date: Optional[str] = None):
     print(f"User ID: {user_id}")
     today = datetime.now(timezone.utc).date()
     today_key = date.today().isoformat()
