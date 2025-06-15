@@ -4678,4 +4678,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "c9cfce873b88419507c42c3bc6faed963573ddeb14eaba9d7d6807bd8519cba8"
+content-hash = "1184b4c9def9bd064ec969d67847ac7558a8d99700a2467a469e4adf22680135"

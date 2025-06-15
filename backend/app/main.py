@@ -45,7 +45,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(middleware_class=AuthMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET)
 app.add_exception_handler(APIException, api_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 app.include_router(auth.router, prefix="/api/auth/v1", tags=["Authentication"])

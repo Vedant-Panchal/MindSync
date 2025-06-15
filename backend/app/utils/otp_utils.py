@@ -6,7 +6,7 @@ from app.core.exceptions import APIException
 from app.db.schemas.journal import DraftCreate
 
 
-def store_otp(email: str, otp: str):
+async def store_otp(email: str, otp: str):
     try:
         redis_client.set(name=email, value=otp, ex=OTP_EXPIRY_MINS * 60)
         logging.info(f"✅ OTP stored successfully in Redis for {email}")

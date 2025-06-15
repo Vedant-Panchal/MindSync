@@ -1,16 +1,16 @@
 from email import message
 from jose import jwt, JWTError
-from fastapi import APIRouter, Cookie, Request, Response, status
+from fastapi import APIRouter, Cookie, Request, Response, status,BackgroundTasks
 from uuid import uuid4
 from datetime import datetime, timezone
 from pydantic import EmailStr
+import httpx
 import requests
 from app.core.config import (
     ACCESS_TOKEN_EXPIRES_MINS,
     GOOGLE_CLIENT_ID,
     GOOGLE_URI,
     REFRESH_TOKEN_EXPIRES_DAYS,
-    ACCESS_TOKEN_EXPIRES_MINS,
 )
 from fastapi.encoders import jsonable_encoder
 from app.core.connection import db
@@ -24,7 +24,6 @@ from app.db.schemas.user import (
 )
 from app.db.schemas.user import SignUpType
 from app.services.auth import hashPass, create_token, verify_pass, decode_token
-from app.db.schemas.supabase import SupabaseResponse
 from app.utils.email import send_otp_email
 from app.utils.otp_utils import verify_otp
 from app.utils.utils import get_user_by_email
@@ -35,6 +34,8 @@ from app.services.google_oauth import GOOGLE_JWKS_URL, oauth
 from app.models.auth import OAuthType
 from app.core.exceptions import APIException
 from app.core.config import ENVIRONMENT
+from app.utils.auth import set_access_token_cookie, set_refresh_token_cookie
+from starlette.concurrency import run_in_threadpool
 
 router = APIRouter()
 
@@ -47,10 +48,10 @@ async def get_me(request: Request):
 
 
 @router.post("/sign-up")
-async def sign_up(data: SignUpType):
+async def sign_up(data: SignUpType,background_tasks: BackgroundTasks):
     try:
         logger.info("Attempting to sign up user with email: {}", data.email)
-        existing_user = get_user_by_email(data.email)
+        existing_user = await get_user_by_email(data.email)
 
         if existing_user:
             logger.warning("User already exists with email: {}", data.email)
@@ -61,8 +62,10 @@ async def sign_up(data: SignUpType):
                 hint="Please sign in or reset your password",
             )
         otp: str = str(uuid4().int)[:6]
-        send_otp_email(data.email, otp)
-        store_otp(data.email, otp)
+        background_tasks.add_task(send_otp_email, data.email, otp)
+        background_tasks.add_task(send_otp_email, data.email, otp)
+        # send_otp_email(data.email, otp)
+        await store_otp(data.email, otp)
         logger.success("OTP sent successfully to email: {}", data.email)
         return {
             "message": "OTP Sent Successfully",
@@ -104,28 +107,10 @@ async def verify(response: Response, data: create_user):
         userData = CreateOtpType(email=email, id=id, username=username)
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
         refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60)
-        db.table("users").insert(jsonable_encoder(user)).execute()
+        await run_in_threadpool(db.table("users").insert(jsonable_encoder(user)).execute)
 
-        response.set_cookie(
-            key="access_token",
-            value=access_token,
-            max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # convert mins to seconds
-            httponly=True,
-            secure=True if ENVIRONMENT == "production" else False,
-            samesite="None",
-        )
-
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            max_age=REFRESH_TOKEN_EXPIRES_DAYS
-            * 24
-            * 60
-            * 60,  # Convert days to seconds
-            httponly=True,
-            secure=True if ENVIRONMENT == "production" else False,
-            samesite="None",
-        )
+        set_access_token_cookie(response, access_token)
+        set_refresh_token_cookie(response, refresh_token)
         logger.success("User created successfully with email: {}", email)
         return {"message": "User created successfully."}
     except ValueError as ve:
@@ -146,7 +131,7 @@ async def verify(response: Response, data: create_user):
 
 @router.post("/sign-in")
 async def signIn(response: Response, data: VerifyUser):
-    user = get_user_by_email(data.email)
+    user = await get_user_by_email(data.email)
     password: str = data.password
     if not re.fullmatch(PASSWORD_REGEX, password):
         logger.warning("Password does not meet criteria for email: {}", data.email)
@@ -196,25 +181,8 @@ async def signIn(response: Response, data: VerifyUser):
         )
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
         refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60)
-        response.set_cookie(
-            key="access_token",
-            value=access_token,
-            max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # in seconds
-            httponly=True,
-            secure=True if ENVIRONMENT == "production" else False,
-            samesite="None",
-        )
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            max_age=REFRESH_TOKEN_EXPIRES_DAYS
-            * 24
-            * 60
-            * 60,  # Convert days to seconds
-            httponly=True,
-            secure=True if ENVIRONMENT == "production" else False,
-            samesite="None",
-        )
+        set_access_token_cookie(response, access_token)
+        set_refresh_token_cookie(response, refresh_token)
         logger.success("User signed in successfully with email: {}", data.email)
         return {"message": "User signed in successfully"}
     else:
@@ -228,8 +196,8 @@ async def signIn(response: Response, data: VerifyUser):
 
 
 @router.post("/reset-password")
-async def reset_password(email: EmailStr):
-    user_data = get_user_by_email(email)
+async def reset_password(email: EmailStr,background_tasks: BackgroundTasks):
+    user_data = await get_user_by_email(email)
     if not user_data:
         logger.warning("No user exists with this email: {}", email)
         raise APIException(
@@ -250,7 +218,8 @@ async def reset_password(email: EmailStr):
     else:
         otp = str(uuid4().int)[:6]
         store_otp(email, otp)
-        send_otp_email(email, otp)
+        background_tasks.add_task(send_otp_email, email, otp)
+        # send_otp_email(email, otp)
         logger.success("OTP sent successfully to email: {}", email)
         return {
             "message": "OTP Sent Successfully",
@@ -262,7 +231,7 @@ async def reset_password_verify(data: ResetPasswordRequest):
     entered_otp: str = data.entered_otp
     newPassword: str = data.new_password
     email: str = data.email
-    userData = get_user_by_email(email)
+    userData = await get_user_by_email(email)
     if not userData:
         logger.warning("No user exists with this email: {}", email)
         raise APIException(
@@ -291,7 +260,7 @@ async def reset_password_verify(data: ResetPasswordRequest):
 
             hashedPassword = hashPass(newPassword)
             try:
-                db.table("users").update({"password": hashedPassword}).eq(
+                await db.table("users").update({"password": hashedPassword}).eq(
                     "email", email
                 ).execute()
                 logger.success("Password updated successfully for email: {}", email)
@@ -409,7 +378,7 @@ async def google_callback(request: Request):
         google_id = user_info.get("sub")
 
         user_id = str(uuid4())
-        existing_user = get_user_by_email(email)
+        existing_user = await get_user_by_email(email)
         if existing_user:
             user = existing_user[0]
             print("user", user)
@@ -440,20 +409,8 @@ async def google_callback(request: Request):
         # Set cookies for tokens
         response = RedirectResponse(url="https://mindsyncc.vercel.app/app/dashboard/")
         # response = RedirectResponse(url="http://localhost:5173/app/dashboard/")
-        response.set_cookie(
-            "access_token",
-            access_token,
-            httponly=True,
-            secure=True if ENVIRONMENT == "production" else False,
-            samesite="None",
-        )
-        response.set_cookie(
-            "refresh_token",
-            refresh_token,
-            httponly=True,
-            secure=True if ENVIRONMENT == "production" else False,
-            samesite="None",
-        )
+        set_access_token_cookie(response, access_token)
+        set_refresh_token_cookie(response, refresh_token)
         return response
     except APIException as e:
         print(e)

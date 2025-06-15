@@ -93,7 +93,7 @@ async def getQuery(request: Request, user_query: ChatbotType):
             # )
 
             manual_data = get_Chat_data(user_query.query, user["id"], filter_params)
-            
+
         except APIException as e:
             logger.exception(f"Error in query_function: {str(e)}")
             raise APIException(

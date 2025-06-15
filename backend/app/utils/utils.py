@@ -18,6 +18,7 @@ import string
 
 
 from app.core.exceptions import APIException
+from fastapi.concurrency import run_in_threadpool
 from app.db.schemas.journal import (
     DraftCreate,
     Journal,
@@ -36,14 +37,16 @@ mood_classifier = pipeline(
 )
 
 
-def get_user_by_email(email: EmailStr):
+async def get_user_by_email(email: EmailStr):
     try:
-        response = db.table("users").select("*").eq("email", email).execute()
+        response = await run_in_threadpool(
+            lambda: db.table("users").select("*").eq("email", email).execute()
+        )
         return response.data
     except Exception as e:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_408_REQUEST_TIMEOUT,
-            detail="Error Ocurred While Fetching Data",
+            detail="Error occurred while fetching data",
         )
 
 

@@ -7,6 +7,7 @@ from app.services.auth import decode_token, create_token
 from app.db.schemas.user import CreateOtpType
 from app.core.exceptions import APIException
 import json
+from app.utils.auth import set_access_token_cookie
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -27,17 +28,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/api/auth/v1/google/callback",
         }  # Public routes
 
-    # print("IN Security")
     async def dispatch(self, request: Request, call_next):
-        if ENVIRONMENT == "production":
-            secure = True
-        else:
-            secure = False
         try:
             # Skip ALL OPTIONS requests to let CORSMiddleware handle them
-            if request.method == "OPTIONS":
-                return await call_next(request)
-            if request.url.path in self.excluded_paths:
+            if request.method == "OPTIONS" or request.url.path in self.excluded_paths:
                 return await call_next(request)
 
             access_token = request.cookies.get("access_token")
@@ -55,24 +49,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
                     )
                 try:
                     # Decode refresh token & generate new access token
-                    decoded_token = decode_token(refresh_token)
-                    existing_user = CreateOtpType(**decoded_token)
+                    decoded_refresh = decode_token(refresh_token)
+                    existing_user = CreateOtpType(**decoded_refresh)
                     new_access_token = create_token(
                         existing_user, ACCESS_TOKEN_EXPIRES_MINS
                     )
 
                     # Store user in request state
-                    request.state.user = decode_token(new_access_token)
+                    request.state.user = decoded_refresh
 
                     response = await call_next(request)
-                    response.set_cookie(
-                        key="access_token",
-                        value=new_access_token,
-                        max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,
-                        httponly=True,
-                        secure=True if ENVIRONMENT == "production" else False,
-                        samesite="None",
-                    )
+                    set_access_token_cookie(response, new_access_token)
                     return response
                 except Exception as e:
                     raise APIException(
