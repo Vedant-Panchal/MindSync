@@ -41,14 +41,17 @@ def decode_token(token: str):
     try:
         decoded_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
         return decoded_token
-    except jwt.ExpiredSignatureError:             
+    except jwt.ExpiredSignatureError:
         raise APIException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired",            message="Access token has expired",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            message="Access token has expired",
             hint="Please refresh your session",
         )
     except JWTError:
         raise APIException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
             message="Access token is invalid",
             hint="Login again",
         )

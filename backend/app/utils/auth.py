@@ -1,5 +1,10 @@
 from fastapi import Response
-from app.core.config import ENVIRONMENT, ACCESS_TOKEN_EXPIRES_MINS, REFRESH_TOKEN_EXPIRES_DAYS
+from app.core.config import (
+    ENVIRONMENT,
+    ACCESS_TOKEN_EXPIRES_MINS,
+    REFRESH_TOKEN_EXPIRES_DAYS,
+)
+
 
 def set_access_token_cookie(response: Response, access_token: str):
     response.set_cookie(
@@ -10,6 +15,7 @@ def set_access_token_cookie(response: Response, access_token: str):
         secure=True if ENVIRONMENT == "production" else False,
         samesite="None",
     )
+
 
 def set_refresh_token_cookie(response: Response, refresh_token: str):
     response.set_cookie(

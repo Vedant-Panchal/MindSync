@@ -1,6 +1,6 @@
 from email import message
 from jose import jwt, JWTError
-from fastapi import APIRouter, Cookie, Request, Response, status,BackgroundTasks
+from fastapi import APIRouter, Cookie, Request, Response, status, BackgroundTasks
 from uuid import uuid4
 from datetime import datetime, timezone
 from pydantic import EmailStr
@@ -48,7 +48,7 @@ async def get_me(request: Request):
 
 
 @router.post("/sign-up")
-async def sign_up(data: SignUpType,background_tasks: BackgroundTasks):
+async def sign_up(data: SignUpType, background_tasks: BackgroundTasks):
     try:
         logger.info("Attempting to sign up user with email: {}", data.email)
         existing_user = await get_user_by_email(data.email)
@@ -107,7 +107,9 @@ async def verify(response: Response, data: create_user):
         userData = CreateOtpType(email=email, id=id, username=username)
         access_token = create_token(userData, ACCESS_TOKEN_EXPIRES_MINS)
         refresh_token = create_token(userData, REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60)
-        await run_in_threadpool(db.table("users").insert(jsonable_encoder(user)).execute)
+        await run_in_threadpool(
+            db.table("users").insert(jsonable_encoder(user)).execute
+        )
 
         set_access_token_cookie(response, access_token)
         set_refresh_token_cookie(response, refresh_token)
@@ -196,7 +198,7 @@ async def signIn(response: Response, data: VerifyUser):
 
 
 @router.post("/reset-password")
-async def reset_password(email: EmailStr,background_tasks: BackgroundTasks):
+async def reset_password(email: EmailStr, background_tasks: BackgroundTasks):
     user_data = await get_user_by_email(email)
     if not user_data:
         logger.warning("No user exists with this email: {}", email)
