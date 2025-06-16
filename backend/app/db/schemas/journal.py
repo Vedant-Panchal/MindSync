@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime, date
 from typing import Optional, Dict, List
@@ -9,14 +9,6 @@ class DraftRequest(BaseModel):
     tags: List[Dict[str, str]]
     title: str
     rich_text: str
-
-
-class DraftRequest(BaseModel):
-    plain_text: str
-    tags: List[Dict[str, str]]
-    title: str
-    rich_text: str
-    journal_date: str
 
 
 class DraftCreate(BaseModel):

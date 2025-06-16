@@ -1,4 +1,3 @@
-from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from app.core.config import JWT_SECRET, JWT_ALGO
 from jose import jwt, JWTError
@@ -16,13 +15,6 @@ def hashPass(password: str):
 
 def verify_pass(password: str, hashed: str):
     return passlibContext.verify(secret=password, hash=hashed)
-
-
-def get_token(data: dict, JWT_SECRET: str, JWT_ALGO: str):
-    return jwt.encode(data, JWT_SECRET, algorithm=JWT_ALGO)
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def create_token(data: CreateOtpType, expire: int):

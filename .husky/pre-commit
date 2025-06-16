@@ -6,4 +6,5 @@ npx lint-staged || exit 1
 cd ../backend
 poetry run black . || exit 1
 
+git ls-files -m '*.py' | xargs git add
 cd ..

@@ -83,11 +83,11 @@ def analyze_mood(text: str) -> dict:
 
     moods = {result["label"]: round(result["score"], 4) for result in mood_list}
 
-    print(f"Moods : {moods}")
+    # print(f"Moods : {moods}")
 
     sorted_moods = sorted(moods.items(), key=lambda x: x[1], reverse=True)
 
-    print(sorted_moods)
+    # print(sorted_moods)
 
     top_three_moods = sorted_moods[:3]
 
@@ -160,7 +160,7 @@ def submit_draft(user_id: str, journal_date: Optional[str] = None):
     )
 
 
-def insert_journal(journal_data, db):
+def insert_journal(journal_data):
     try:
         response = db.table("journals").insert(journal_data).execute()
         if not response.data:
@@ -171,7 +171,7 @@ def insert_journal(journal_data, db):
         raise ValueError(f"Insertion failed: {str(e)}")
 
 
-def insert_journal_section(section_data: dict, db):
+def insert_journal_section(section_data: dict):
     try:
         response = (
             db.table("journal_sections")
@@ -232,7 +232,7 @@ def aggregate_journal(
 
     if moods:
         sorted_moods = sorted(moods.items(), key=lambda x: x[1], reverse=True)[:3]
-        print(f"Moods is  {sorted_moods}")
+        # print(f"Moods is  {sorted_moods}")
         moods = dict(sorted_moods)
     else:
         moods = {"neutral": 0.0}
@@ -248,7 +248,7 @@ def aggregate_journal(
         "embedding": combine_embedding,
         "tags": tags,
         "embedding": combine_embedding,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": date or datetime.now(timezone.utc),
         "title": title,
         "title_embedding": title_embedding[0],
         "rich_text": rich_text,
