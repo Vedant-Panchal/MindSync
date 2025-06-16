@@ -11,13 +11,6 @@ class DraftRequest(BaseModel):
     rich_text: str
 
 
-class DraftRequest(BaseModel):
-    plain_text: str
-    tags: List[Dict[str, str]]
-    title: str
-    rich_text: str
-    journal_date: str
-
 
 class DraftCreate(BaseModel):
     content: str
