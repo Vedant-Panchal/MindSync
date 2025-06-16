@@ -11,7 +11,6 @@ class DraftRequest(BaseModel):
     rich_text: str
 
 
-
 class DraftCreate(BaseModel):
     content: str
     user_id: UUID
