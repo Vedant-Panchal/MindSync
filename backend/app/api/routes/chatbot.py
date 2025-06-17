@@ -2,6 +2,8 @@ from email import message
 from fastapi import APIRouter, Request, status, HTTPException
 from datetime import date, datetime
 from uuid import uuid4
+from fastapi.responses import StreamingResponse
+from httpx import stream
 from sqlalchemy import update
 from sympy import content
 from app.core.config import MODEL_VECTOR
@@ -26,6 +28,7 @@ from app.utils.chatbot_utils import (
     get_journals_by_date,
     # query_function,
     query_parser,
+    streamed_response,
 )
 
 router = APIRouter()
@@ -179,4 +182,112 @@ def remove_history(request: Request):
             status_code=500,
             detail=str(e),
             message="An unexpected error occurred while removing chat history",
+        )
+
+
+@router.get("/start/streaming")
+async def getStreamedResponse(request: Request, user_query: ChatbotType):
+    """
+    Endpoint to handle chatbot queries. It processes the user's query, retrieves relevant journal data,
+    and generates a final response using the `final_response` function.
+    """
+    logger.info(f"Received chatbot query: {user_query.query}")
+    print("Received chatbot query:", user_query.query)
+    today = datetime.today().strftime("%Y-%m-%d")
+    logger.success("Today : {env} 🌍", env=today)
+    try:
+        filter_params = query_parser(user_query.query)
+        logger.info(f"Parsed filter parameters: {filter_params}")
+
+        user = getattr(request.state, "user", None)
+
+        try:
+            history = get_history(user_id=user["id"])
+        except APIException as e:
+            logger.error(f"Failed to load history: {str(e.message)}")
+            history = []
+
+        llm_data = []
+        if not filter_params["is_related"] and not filter_params["is_history"]:
+            logger.info("Query is not realted to Journals")
+            response = {
+                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
+            }
+            query_object = {"user_query": user_query.query, "response": response}
+            history.append(query_object)
+            dumped_history = json.dumps(history)
+            store_history(dumped_history, user["id"])
+            return StreamingResponse(
+                content=[f"data: {json.dumps({'response': response})}\n\n"],
+                media_type="text/event-stream",
+            )
+        if filter_params.get("is_history", False):
+            logger.info("Processing history-only query")
+            try:
+                final_result = streamed_response(
+                    data=llm_data,
+                    user_query=user_query.query,
+                    history=history,
+                    user_id=user["id"],
+                    is_history=True,
+                )
+                return StreamingResponse(final_result, media_type="text/event-stream")
+            except APIException as e:
+                logger.exception(f"Error processing history query: {str(e)}")
+                raise APIException(
+                    status_code=500,
+                    detail=str(e.message),
+                    message="Error processing history-based query",
+                )
+
+        # Process journal query
+        logger.info("Processing journal query")
+        try:
+            # result = query_function(
+            #     user["id"],
+            #     user_query.query,
+            #     filter_params,
+            # )
+
+            manual_data = get_Chat_data(user_query.query, user["id"], filter_params)
+
+        except APIException as e:
+            logger.exception(f"Error in query_function: {str(e)}")
+            raise APIException(
+                status_code=500, detail=str(e), message="Error fetching journal data"
+            )
+
+        if manual_data.get("data") and len(manual_data["data"]) > 0:
+            for data in manual_data["data"]:
+                data_object = {
+                    "content": data.get("content", ""),
+                    "title": data.get("title", ""),
+                    "date": data.get("created_at", ""),
+                    "moods": data.get("moods", []),
+                    "semantic_result": manual_data.get("Semantic Result", []),
+                    "title_search": manual_data.get("title_search", []),
+                }
+                llm_data.append(data_object)
+
+        try:
+            final_result = streamed_response(
+                data=llm_data,
+                user_query=user_query.query,
+                history=history,
+                user_id=user["id"],
+                is_history=False,
+            )
+            return StreamingResponse(final_result, media_type="text/event-stream")
+        except APIException as e:
+            logger.exception(f"Error in final_response for journal query: {str(e)}")
+            raise APIException(
+                status_code=500,
+                detail=str(e),
+                message="Error generating final response",
+            )
+
+    except APIException as e:
+        logger.exception(f"Unexpected error in /chatbot: {str(e)}")
+        raise APIException(
+            status_code=500, detail=str(e), message="An unexpected error occurred"
         )

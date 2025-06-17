@@ -4,6 +4,7 @@ import re
 from urllib import response
 import dateparser
 import google.generativeai as genai
+from google.generativeai.types.generation_types import GenerateContentResponse
 from loguru import logger
 from pydantic import BaseModel
 from sympy import false
@@ -536,7 +537,7 @@ def get_Chat_data(user_query: str, user_id: str, filter_params: dict):
 
 
 import google.generativeai as genai
-from typing import List, Dict, Any, Optional
+from typing import AsyncGenerator, List, Dict, Any, Optional
 
 genai.configure(api_key=GEMINI_KEY)
 
@@ -682,12 +683,206 @@ def final_response(
             )
 
         chat = model.start_chat(history=transformed)
-        response = chat.send_message(prompt, stream=True)
+        response: GenerateContentResponse = chat.send_message(prompt, stream=True)
+        print("Response is", response)
         full_response = ""
         for chunk in response:
             if chunk.candidates:
                 part = chunk.candidates[0].content.parts[0].text
                 full_response += part
+        # print("before cleaned",full_response)
+        cleaned = re.sub(
+            r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
+        )
+
+        # print("after cleaning ",cleaned)
+        parsed = json.loads(cleaned)
+
+        # print(f"after parsing ",parsed)
+        if isinstance(parsed, list):
+            combined_message = "\n".join(
+                [
+                    f"{i+1}. {entry['title']} ({entry['date']}): {entry['message']}"
+                    for i, entry in enumerate(parsed)
+                ]
+            )
+            # print("combined message is", combined_message)
+            parsed = {
+                "title": "List of Journal Entries",
+                "date": str(today),
+                "message": combined_message,
+            }
+        # logger.info(f"this is response : {full_response}")
+        print("parsed response is", parsed)
+        query_object = {"user_query": user_query, "response": parsed}
+        history.append(query_object)
+        dumped_history = json.dumps(history)
+        store_history(dumped_history, user_id)
+        print("parsed response is parse", parsed)
+        return {
+            "message": parsed,
+        }
+    except Exception as e:
+        logger.info(f"Error generating final response: {str(e)}")
+        raise APIException(
+            status_code=500, detail=str(e), message="Error generating final response"
+        )
+
+
+async def streamed_response(
+    data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
+) -> AsyncGenerator[Dict[str, Any], None]:
+
+    transformed = []
+    logger.debug(history)
+    for entry in history:
+        print("this is entry", entry)
+        transformed.append({"role": "user", "parts": [{"text": entry["user_query"]}]})
+        transformed.append(
+            {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
+        )
+
+    if is_history:
+        if not transformed:  # No history available
+            prompt = f"""
+            This is the user query = '{user_query}'.
+            There is no conversation history available.
+            Only respond if the user query is clearly related to journals, journal content, or journal history.
+            If the query is unrelated (e.g. about movies, news, random facts), respond with:
+            {{
+                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
+            }}
+            Respond in JSON format like:
+            {{
+                "title": "unknown",
+                "date": "NA",
+                "message": "I don’t have any prior conversation history to base my response on. How can I assist you?"
+            }}
+            """
+        else:
+            prompt = f"""
+            This is the user query = '{user_query}'.
+            Respond to this query using the conversation history provided.
+            Only respond if the user query is clearly related to journals, journal content, or journal history.
+            If the query is unrelated (e.g. about movies, news, random facts), respond with:
+            {{
+                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
+            }}
+            Use natural language and incorporate context from the history to answer the query.
+            Respond in JSON format like:
+            {{
+                "title": "Conversation Summary",
+                "date": "{today}",
+                "message": "your natural language response here"
+            }}
+            """
+    elif not data or len(data) == 0:
+        prompt = f"""
+        This is the user query = '{user_query}'.
+        The journal data is empty.
+        Only respond if the user query is clearly related to journals, journal content, or journal history.
+        If the query is unrelated (e.g. about movies, news, random facts), respond with:
+        {{
+            "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
+        }}
+        Respond in JSON format like:
+        {{
+            "title": "unknown",
+            "date": "NA",
+            "message": "Cannot Understand Your Question, please provide some details"
+        }}
+        """
+    else:
+        # logger.debug(data)
+        # data_str = "\n".join([f"- Titled '{entry.get('title', 'Untitled')}' on {entry.get('date', 'unknown date')}: {entry.get('text', 'No details available')}" for entry in data])
+        prompt = f"""
+        You are an intelligent journaling assistant.
+        Only respond if the user query is clearly related to journals, journal content, or journal history.
+        If the query is unrelated (e.g. about movies, news, random facts), respond with:
+        {{
+            "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
+        }}
+
+            When responding to journal-related queries, format your response with proper markdown:
+
+            ### title with descriptive heading related to the query
+
+            **Date:** {today}
+
+            Main content with appropriate markdown formatting:
+            - Use **bold** for emphasis
+            - Use *italics* for subtle emphasis
+            - Use ### for section headings
+            - Use bullet points or numbered lists when appropriate
+            - Include blockquotes for journal excerpts
+
+            This is the user query = '{user_query}'.
+            Respond to this query with the help of this data: {data}.
+            Use natural language and incorporate context from the conversation history if available.
+            Always ensure the response is properly escaped JSON that can be parsed with json.loads().
+
+
+            Respond in JSON format like:
+        {{
+            "title": "unknown",
+            "date": "NA",
+            "message": "your response here"
+        }}
+
+        """
+
+    model = genai.GenerativeModel(
+        "gemini-1.5-flash",
+        safety_settings=[
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_LOW_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_LOW_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_LOW_AND_ABOVE",
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+            },
+        ],
+    )
+
+    try:
+        transformed = []
+        for entry in history:
+            # Add user query as a "user" role message
+            transformed.append(
+                {"role": "user", "parts": [{"text": entry["user_query"]}]}
+            )
+            # Add response as a "model" role message
+            transformed.append(
+                {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
+            )
+
+        chat = model.start_chat(history=transformed)
+        response: GenerateContentResponse = chat.send_message(prompt, stream=True)
+        full_response = ""
+        for chunk in response:
+            if chunk.candidates:
+                try:
+                    part = chunk.candidates[0].content.parts[0].text
+                    full_response += part
+                    # cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", buffer.strip(), flags=re.MULTILINE)
+                    try:
+                        # parsed = json.loads(cleaned)
+                        yield f"data: {json.dumps({'type': 'entry', 'data': part})}\n\n"
+                        buffer = ""
+                    except json.JSONDecodeError:
+                        continue
+                except Exception as e:
+                    yield f"data: {json.dumps({'type': 'error', 'data': {'title': 'Error', 'date': today, 'message': f'Error processing chunk: {str(e)}'}})}\n\n"
+                    continue
         # print("before cleaned",full_response)
         cleaned = re.sub(
             r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
@@ -717,10 +912,12 @@ def final_response(
         dumped_history = json.dumps(history)
         store_history(dumped_history, user_id)
         print("parsed response is parse", parsed)
-        return {
-            "message": parsed,
-        }
+        yield f"data: {json.dumps({'type': 'entry', 'data': parsed})}\n\n"
+
+        yield f"data: {json.dumps({'status': 'complete'})}\n\n"
+        return
     except Exception as e:
+        logger.info(f"Error generating final response: {str(e)}")
         raise APIException(
             status_code=500, detail=str(e), message="Error generating final response"
         )
