@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Markdown from "react-markdown";
-
+import { motion } from "motion/react";
 export type Mode = "typewriter" | "fade";
 
 export type UseTextStreamOptions = {
@@ -336,7 +336,7 @@ function ResponseStream({
     .fade-segment {
       display: inline-block;
       opacity: 0;
-      animation: fadeIn ${getFadeDuration()}ms ease-out forwards;
+      animation: fadeIn ms ease-out forwards;
     }
 
     .fade-segment-space {
@@ -359,7 +359,25 @@ function ResponseStream({
           <>
             <style>{fadeStyle}</style>
             <div className="relative">
-              <Markdown>
+              <Markdown
+                components={{
+                  h1: ({ children }) => <h1 className="">{children}</h1>,
+                  h2: ({ children }) => <h2 className="">{children}</h2>,
+                  h3: ({ children }) => <h3 className="">{children}</h3>,
+                  h4: ({ children }) => <h4 className="">{children}</h4>,
+                  h5: ({ children }) => <h5 className="">{children}</h5>,
+                  h6: ({ children }) => <h6 className="">{children}</h6>,
+                  a: ({ href, children }) => (
+                    <a href={href} className="underline">
+                      {children}
+                    </a>
+                  ),
+                  p: ({ children }) => <p className="">{children}</p>,
+                  blockquote: ({ children }) => (
+                    <blockquote className="">{children}</blockquote>
+                  ),
+                }}
+              >
                 {segments.map((segment) => segment.text).join("")}
               </Markdown>
               {/* <div
@@ -404,46 +422,6 @@ function ResponseStream({
   const Container = as as keyof React.JSX.IntrinsicElements;
 
   return <Container className={className}>{renderContent()}</Container>;
-}
-function FadeMarkdownStream({ textStream, speed, ...rest }) {
-  const { segments, isComplete, getFadeDuration, getSegmentDelay } =
-    useTextStream({
-      textStream,
-      mode: "fade",
-      speed,
-      ...rest,
-    });
-
-  // Build the current Markdown string from received segments
-  const markdown = segments.map((s) => s.text).join("");
-
-  return (
-    <div>
-      <style>{`
-        @keyframes fadeIn { 0% { opacity:0 } 100% { opacity:1 } }
-        .fade-word { opacity:0; animation:fadeIn ${getFadeDuration()}ms forwards; }
-      `}</style>
-
-      <Markdown>
-        {
-          // Render the markdown markup,
-          // but replace raw text with animated spans
-          markdown
-            .split(/(\s+)/)
-            .map((chunk, idx) => (
-              <span
-                key={idx}
-                className="fade-word"
-                style={{ animationDelay: `${idx * getFadeDuration()}ms` }}
-              >
-                {chunk}
-              </span>
-            ))
-            .join("")
-        }
-      </Markdown>
-    </div>
-  );
 }
 
 export { useTextStream, ResponseStream };

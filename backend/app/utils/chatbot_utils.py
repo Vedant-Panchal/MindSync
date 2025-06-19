@@ -1,3 +1,4 @@
+import asyncio
 from datetime import date, datetime
 import json
 import re
@@ -8,6 +9,7 @@ from google.generativeai.types.generation_types import GenerateContentResponse
 from loguru import logger
 from pydantic import BaseModel
 from sympy import false
+import tiktoken
 
 from app.core.config import GEMINI_KEY
 from app.core.connection import db
@@ -15,6 +17,7 @@ from app.core.exceptions import APIException
 from app.utils.utils import direct_embedding
 from app.utils.otp_utils import store_history
 
+enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
 safety = [
     {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_LOW_AND_ABOVE"},
     {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE"},
@@ -919,16 +922,14 @@ async def streamed_response(
         for chunk in response:
             if chunk.candidates:
                 try:
-                    # part = chunk.candidates[0].content.parts[0].text
-                    # for mini in split_markdown_safe(part):
-                    #     full_response += mini
-                    #     yield {
-                    #         "event": "chunk",
-                    #         "data": {"text": mini}
-                    #     }
                     part = chunk.candidates[0].content.parts[0].text
                     full_response += part
-                    yield {"event": "chunk", "data": {"text": part}}
+                    tokens = enc.encode(part)
+                    for token in tokens:
+                        word = enc.decode([token])
+                        yield {"event": "chunk", "data": {"text": word}}
+                        await asyncio.sleep(0.002)  # Optional delay to simulate typing
+                    # yield {"event": "chunk", "data": {"text": part}}
                 except Exception as e:
                     yield {
                         "event": "error",
