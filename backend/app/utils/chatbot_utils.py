@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import json
 import re
 from urllib import response
@@ -88,7 +88,7 @@ def query_parser(user_query: str):
     cleaned = re.sub(
         r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE
     )
-    print(f"Cleaned is : {cleaned}")
+    # print(f"Cleaned is : {cleaned}")
 
     try:
         parsed = json.loads(cleaned)
@@ -500,7 +500,7 @@ def filter_by_tags(tags: list, data):
 #         )
 
 
-def get_Chat_data(user_query: str, user_id: str, filter_params: dict):
+def get_chat_data(user_query: str, user_id: str, filter_params: dict):
     """
     Function to get chat data based on user query and filter parameters.
     It uses the query_function to fetch and filter journal data.
@@ -683,6 +683,7 @@ def final_response(
             )
 
         chat = model.start_chat(history=transformed)
+        print("Chat final prompt", prompt)
         response: GenerateContentResponse = chat.send_message(prompt, stream=True)
         print("Response is", response)
         full_response = ""
@@ -729,86 +730,68 @@ def final_response(
         )
 
 
-async def streamed_response(
-    data: List[Dict], user_query: str, history: list[Dict], user_id, is_history
-) -> AsyncGenerator[Dict[str, Any], None]:
+# Transform history into model-compatible format
+def transform_history(history: List[Dict]) -> List[Dict]:
+    return [
+        item
+        for entry in history
+        for item in [
+            {"role": "user", "parts": [{"text": entry["user_query"]}]},
+            {"role": "model", "parts": [{"text": entry["response"]["message"]}]},
+        ]
+    ]
 
-    transformed = []
-    logger.debug(history)
-    for entry in history:
-        print("this is entry", entry)
-        transformed.append({"role": "user", "parts": [{"text": entry["user_query"]}]})
-        transformed.append(
-            {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
-        )
+
+# Build prompt with modular structure
+def build_prompt(
+    user_query: str, data: List[Dict], history: List[Dict], is_history: bool, today: str
+) -> tuple[str, List[Dict]]:
+    base_prompt = """
+    You are an intelligent journaling assistant.
+    Only respond if the user query is clearly related to journals, journal content, or journal history.
+    If the query is unrelated (e.g., about movies, news, random facts, math, science, code writing), respond with the message below:
+    
+    'I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊'
+    
+    Make sure the streamed content is ONLY MARKDOWN MESSAGE
+    Remember DO NOT WRAP IN JSON FORMAT IN ANY CASE.
+    
+    """
+    citations = [
+        {
+            "journal_id": entry.get("id", f"journal_{i}"),
+            "title": entry.get("title", "Untitled"),
+            "date": entry.get("date", "unknown"),
+            "url": f"/journals/{entry.get('id', i)}",  # Adjust URL based on your app
+        }
+        for i, entry in enumerate(data)
+    ]
 
     if is_history:
-        if not transformed:  # No history available
-            prompt = f"""
+        if not history:
+            return (
+                f"""
+                {base_prompt}
+                This is the user query = '{user_query}'.
+                There is no conversation history available.
+                respond with the message below:
+                
+                "I don’t have any prior conversation history to base my response on. How can I assist you?"
+                
+                Make sure the streamed content is ONLY MARKDOWN MESSAGE
+                Remember DO NOT WRAP IN JSON FORMAT IN ANY CASE.
+                """,
+                [],
+            )
+        return (
+            f"""
+            {base_prompt}
             This is the user query = '{user_query}'.
-            There is no conversation history available.
-            Only respond if the user query is clearly related to journals, journal content, or journal history.
-            If the query is unrelated (e.g. about movies, news, random facts), respond with:
-            {{
-                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
-            }}
-            Respond in JSON format like:
-            {{
-                "title": "unknown",
-                "date": "NA",
-                "message": "I don’t have any prior conversation history to base my response on. How can I assist you?"
-            }}
-            """
-        else:
-            prompt = f"""
-            This is the user query = '{user_query}'.
-            Respond to this query using the conversation history provided.
-            Only respond if the user query is clearly related to journals, journal content, or journal history.
-            If the query is unrelated (e.g. about movies, news, random facts), respond with:
-            {{
-                "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
-            }}
-            Use natural language and incorporate context from the history to answer the query.
-            Respond in JSON format like:
-            {{
-                "title": "Conversation Summary",
-                "date": "{today}",
-                "message": "your natural language response here"
-            }}
-            """
-    elif not data or len(data) == 0:
-        prompt = f"""
-        This is the user query = '{user_query}'.
-        The journal data is empty.
-        Only respond if the user query is clearly related to journals, journal content, or journal history.
-        If the query is unrelated (e.g. about movies, news, random facts), respond with:
-        {{
-            "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
-        }}
-        Respond in JSON format like:
-        {{
-            "title": "unknown",
-            "date": "NA",
-            "message": "Cannot Understand Your Question, please provide some details"
-        }}
-        """
-    else:
-        # logger.debug(data)
-        # data_str = "\n".join([f"- Titled '{entry.get('title', 'Untitled')}' on {entry.get('date', 'unknown date')}: {entry.get('text', 'No details available')}" for entry in data])
-        prompt = f"""
-        You are an intelligent journaling assistant.
-        Only respond if the user query is clearly related to journals, journal content, or journal history.
-        If the query is unrelated (e.g. about movies, news, random facts), respond with:
-        {{
-            "message": "I can only help with questions related to your journals. If you have a query about a specific entry, topic, mood, or time period in your journals, feel free to ask! 😊"
-        }}
-
+            Respond using the conversation history provided.
+            Use natural language and incorporate context from the history.
             When responding to journal-related queries, format your response with proper markdown:
-
             ### title with descriptive heading related to the query
-
             **Date:** {today}
-
             Main content with appropriate markdown formatting:
             - Use **bold** for emphasis
             - Use *italics* for subtle emphasis
@@ -816,108 +799,184 @@ async def streamed_response(
             - Use bullet points or numbered lists when appropriate
             - Include blockquotes for journal excerpts
 
+            Respond with only the journal summary content first (markdown only). Do NOT wrap in a JSON block.
+            Make sure the streamed content is ONLY the markdown message.
+            """,
+            [],
+        )
+
+    if not data:
+        return (
+            f"""
+            {base_prompt}
             This is the user query = '{user_query}'.
-            Respond to this query with the help of this data: {data}.
-            Use natural language and incorporate context from the conversation history if available.
-            Always ensure the response is properly escaped JSON that can be parsed with json.loads().
-
-
+            NOTE: The journal data is empty.
+            Respond with the message below based on the type of query asked tags:
+            
+            'I couldn’t find any journal entries related to your query. Try rephrasing your question or adding more details. If you’re new, start by creating some journal entries to explore this feature! 😊'
+            
+            Here are a few suggestions to help you:
+            - Try rephrasing your query to include specific dates, moods, or topics.
+            - Ensure that the journal entries you are looking for have been saved with relevant details.
+            - If you’re starting fresh, consider adding new journal entries to build your collection.
+        
+            Make sure the streamed content is ONLY MARKDOWN MESSAGE
+            Remember DO NOT WRAP IN JSON FORMAT IN ANY CASE.
             Respond in JSON format like:
-        {{
-            "title": "unknown",
-            "date": "NA",
-            "message": "your response here"
-        }}
+            """,
+            [],
+        )
 
-        """
+    return (
+        f"""
+    {base_prompt}
+    When responding to journal-related queries, format your response with proper markdown:
+    ### title with descriptive heading related to the query
+    **Date:** {today}
+    Main content with appropriate markdown formatting:
+    - Use **bold** for emphasis
+    - Use *italics* for subtle emphasis
+    - Use ### for section headings
+    - Use bullet points or numbered lists when appropriate
+    - Include blockquotes for journal excerpts
 
-    model = genai.GenerativeModel(
-        "gemini-1.5-flash",
-        safety_settings=[
-            {
-                "category": "HARM_CATEGORY_HARASSMENT",
-                "threshold": "BLOCK_LOW_AND_ABOVE",
-            },
-            {
-                "category": "HARM_CATEGORY_HATE_SPEECH",
-                "threshold": "BLOCK_LOW_AND_ABOVE",
-            },
-            {
-                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                "threshold": "BLOCK_LOW_AND_ABOVE",
-            },
-            {
-                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                "threshold": "BLOCK_MEDIUM_AND_ABOVE",
-            },
-        ],
+    This is the user query = '{user_query}'.
+    Respond with the help of this data: {data}.
+
+    Respond with only the journal summary content first (markdown only). Do NOT wrap in a JSON block.
+    Make sure the streamed content is ONLY the markdown message.
+    """,
+        citations,
     )
 
-    try:
-        transformed = []
-        for entry in history:
-            # Add user query as a "user" role message
-            transformed.append(
-                {"role": "user", "parts": [{"text": entry["user_query"]}]}
-            )
-            # Add response as a "model" role message
-            transformed.append(
-                {"role": "model", "parts": [{"text": entry["response"]["message"]}]}
-            )
 
-        chat = model.start_chat(history=transformed)
-        response: GenerateContentResponse = chat.send_message(prompt, stream=True)
+# Initialize model with configurable settings
+def initialize_model() -> genai.GenerativeModel:
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_LOW_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_LOW_AND_ABOVE"},
+        {
+            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            "threshold": "BLOCK_LOW_AND_ABOVE",
+        },
+        {
+            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+            "threshold": "BLOCK_MEDIUM_AND_ABOVE",
+        },
+    ]
+    return genai.GenerativeModel("gemini-1.5-flash", safety_settings=safety_settings)
+
+
+def split_markdown_safe(text: str, max_chars: int = 20) -> list[str]:
+    tokens = re.findall(r"\S+\s*", text)  # Captures words and trailing space
+    chunks = []
+    buffer = ""
+
+    for token in tokens:
+        if len(buffer) + len(token) > max_chars:
+            chunks.append(buffer)
+            buffer = token
+        else:
+            buffer += token
+
+    if buffer:
+        chunks.append(buffer)
+
+    return chunks
+
+
+async def streamed_response(
+    data: List[Dict],
+    user_query: str,
+    history: List[Dict],
+    user_id: str,
+    is_history: bool,
+) -> AsyncGenerator[Dict[str, Any], None]:
+    today = str(date.today())
+
+    try:
+        # Transform history and build prompt with citations
+        transformed_history = transform_history(history)
+        prompt, citations = build_prompt(user_query, data, history, is_history, today)
+        logger.info(prompt)
+        # Yield initial metadata event
+        yield {
+            "event": "metadata",
+            "data": {
+                "query": user_query,
+                "user_id": user_id,
+                "is_history": is_history,
+                "citations": citations,
+            },
+        }
+
+        # Start chat session and stream response
+        model = initialize_model()
+        chat = model.start_chat(history=transformed_history)
+        response = chat.send_message(prompt, stream=True)
+
         full_response = ""
         for chunk in response:
             if chunk.candidates:
                 try:
+                    # part = chunk.candidates[0].content.parts[0].text
+                    # for mini in split_markdown_safe(part):
+                    #     full_response += mini
+                    #     yield {
+                    #         "event": "chunk",
+                    #         "data": {"text": mini}
+                    #     }
                     part = chunk.candidates[0].content.parts[0].text
                     full_response += part
-                    # cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", buffer.strip(), flags=re.MULTILINE)
-                    try:
-                        # parsed = json.loads(cleaned)
-                        yield f"data: {json.dumps({'type': 'entry', 'data': part})}\n\n"
-                        buffer = ""
-                    except json.JSONDecodeError:
-                        continue
+                    yield {"event": "chunk", "data": {"text": part}}
                 except Exception as e:
-                    yield f"data: {json.dumps({'type': 'error', 'data': {'title': 'Error', 'date': today, 'message': f'Error processing chunk: {str(e)}'}})}\n\n"
+                    yield {
+                        "event": "error",
+                        "data": {
+                            "title": "Chunk Error",
+                            "date": today,
+                            "message": f"Error processing chunk",
+                        },
+                    }
                     continue
-        # print("before cleaned",full_response)
-        cleaned = re.sub(
-            r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE
-        )
 
-        # print("after cleaning ",cleaned)
-        parsed = json.loads(cleaned)
+        # # # Clean and parse the full response
+        # # cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", full_response.strip(), flags=re.MULTILINE)
+        # try:
+        #     parsed = json.loads(cleaned)
+        # except json.JSONDecodeError as e:
+        #     yield {
+        #         "event": "error",
+        #         "data": {
+        #             "title": "Parse Error",
+        #             "date": today,
+        #             "message": f"Invalid JSON response: {str(e)}"
+        #         }
+        #     }
+        #     return
 
-        # print(f"after parsing ",parsed)
-        if isinstance(parsed, list):
-            combined_message = "\n".join(
-                [
-                    f"{i+1}. {entry['title']} ({entry['date']}): {entry['message']}"
-                    for i, entry in enumerate(parsed)
-                ]
-            )
-            print("combined message is", combined_message)
-            parsed = {
-                "title": "List of Journal Entries",
-                "date": str(today),
-                "message": combined_message,
-            }
-        # logger.info(f"this is response : {full_response}")
-        print("parsed response is", parsed)
-        query_object = {"user_query": user_query, "response": parsed}
-        history.append(query_object)
-        dumped_history = json.dumps(history)
-        store_history(dumped_history, user_id)
-        print("parsed response is parse", parsed)
-        yield f"data: {json.dumps({'type': 'entry', 'data': parsed})}\n\n"
+        # Handle list responses
+        # if isinstance(parsed, list):
+        parsed = {
+            "title": "List of Journal Entries",
+            "date": today,
+            "message": full_response,
+            "citations": citations,
+        }
 
-        yield f"data: {json.dumps({'status': 'complete'})}\n\n"
-        return
+        # Store history
+        history.append({"user_query": user_query, "response": parsed})
+        store_history(json.dumps(history), user_id)
+
+        yield {"event": "complete", "data": {"message": "Stream completed"}}
+
     except Exception as e:
-        logger.info(f"Error generating final response: {str(e)}")
-        raise APIException(
-            status_code=500, detail=str(e), message="Error generating final response"
-        )
+        logger.error(f"Error generating response: {str(e)}")
+        yield {
+            "event": "error",
+            "data": {
+                "title": "Server Error",
+                "date": today,
+                "message": f"Error generating response: {str(e)}",
+            },
+        }

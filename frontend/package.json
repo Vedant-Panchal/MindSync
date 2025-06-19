@@ -110,6 +110,7 @@
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-router-devtools": "^1.114.34",
     "@tanstack/router-plugin": "^1.114.34",
     "@types/node": "^22.13.1",

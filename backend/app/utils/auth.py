@@ -13,7 +13,7 @@ def set_access_token_cookie(response: Response, access_token: str):
         max_age=ACCESS_TOKEN_EXPIRES_MINS * 60,  # in seconds
         httponly=True,
         secure=True if ENVIRONMENT == "production" else False,
-        samesite="None",
+        samesite="Lax",
     )
 
 
@@ -24,5 +24,5 @@ def set_refresh_token_cookie(response: Response, refresh_token: str):
         max_age=REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60,  # days to seconds
         httponly=True,
         secure=True if ENVIRONMENT == "production" else False,
-        samesite="None",
+        samesite="Lax",
     )

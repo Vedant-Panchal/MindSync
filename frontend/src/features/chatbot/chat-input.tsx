@@ -13,10 +13,14 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 import { api } from "@/lib/api-client";
-import { useMutation } from "@tanstack/react-query";
+import { UseMutateFunction, useMutation } from "@tanstack/react-query";
 import { IMessage } from "@/routes/(app)/app.chat";
 
-export function ChatInputWithActions() {
+type ChatInputProps = {
+  mutate: UseMutateFunction<AsyncIterable<string>, Error, string, unknown>;
+  isPending: boolean;
+};
+export function ChatInputWithActions({ mutate, isPending }: ChatInputProps) {
   const {
     input,
     setInput,
@@ -33,34 +37,6 @@ export function ChatInputWithActions() {
     browserSupportsContinuousListening,
     browserSupportsSpeechRecognition,
   } = useSpeechRecognition();
-
-  const { mutate, isPending } = useMutation({
-    mutationFn: async (query: string) => {
-      const res = await api.post("/api/v1/chat/start", { query });
-      return res as any;
-    },
-    onSuccess: (data) => {
-      const fullResponse = data.message.message || data.message;
-      const lastMessageObject: IMessage = {
-        id: messages.length + 1,
-        content: fullResponse,
-        role: "assistant",
-      };
-      setLastMessage(lastMessageObject);
-      setLoading(false);
-    },
-    onError: (error) => {
-      console.error("Error fetching response:", error);
-      const errorMessage = "Error Generating Response, Please Try Again";
-      const lastMessageObject: IMessage = {
-        id: messages.length + 1,
-        content: errorMessage,
-        role: "assistant",
-      };
-      setLastMessage(lastMessageObject);
-      setLoading(false);
-    },
-  });
 
   const startListening = () => {
     SpeechRecognition.abortListening();
