@@ -35,6 +35,7 @@ function RouteComponent() {
     setMessages,
     lastMessage,
     setLastMessage,
+    loading,
     setLoading,
     citations,
     setCitations,
@@ -48,10 +49,12 @@ function RouteComponent() {
       return stream;
     },
     onSuccess: (stream) => {
+      console.log("On Success Stream:", citations);
       const lastMessageObject: IMessage = {
         id: messages.length + 1,
         content: stream, // AsyncIterable<string>
         role: "assistant",
+        citations: citations,
       };
       setLastMessage(lastMessageObject);
     },
@@ -108,9 +111,22 @@ function RouteComponent() {
         setCitations(e.detail);
       }
     };
+
     window.addEventListener("citations", handler);
     return () => window.removeEventListener("citations", handler);
   }, []);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail) {
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener("startStream", handler);
+    return () => window.removeEventListener("startStream", handler);
+  }, []);
+
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-start pt-0">
       <div className="absolute bottom-40 flex w-full translate-x-[-3%] items-center justify-center">
@@ -137,7 +153,7 @@ function RouteComponent() {
                   <div className="text-foreground prose prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-h5:text-sm prose-h6:text-xs max-w-[85%] rounded-lg p-2 text-sm">
                     {message.citations && message.citations.length > 0 && (
                       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                        {citations.map((citation) => (
+                        {message?.citations.map((citation: Citation) => (
                           <a
                             key={citation.journal_id}
                             href={citation.url ?? "#"}
@@ -164,7 +180,7 @@ function RouteComponent() {
             </Message>
           );
         })}
-        {isPending && (
+        {loading && (
           <div className="h-full">
             {/* @ts-ignore */}
             <l-mirage size="60" speed="2.5" color="#3981f6" />

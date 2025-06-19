@@ -914,7 +914,7 @@ async def streamed_response(
         model = initialize_model()
         chat = model.start_chat(history=transformed_history)
         response = chat.send_message(prompt, stream=True)
-
+        yield {"event": "startStream", "data": {"text": "stream started"}}
         full_response = ""
         for chunk in response:
             if chunk.candidates:
@@ -927,6 +927,7 @@ async def streamed_response(
                     #         "data": {"text": mini}
                     #     }
                     part = chunk.candidates[0].content.parts[0].text
+
                     full_response += part
                     yield {"event": "chunk", "data": {"text": part}}
                 except Exception as e:

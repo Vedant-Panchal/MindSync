@@ -155,11 +155,11 @@ def get_chat_history(request: Request):
                 user_entry = {
                     "role": "user",
                     "content": i["user_query"],
-                    "citations": i["response"]["citations"] or [],
                 }
                 assistant_entry = {
                     "role": "assistant",
                     "content": i["response"]["message"],
+                    "citations": i["response"]["citations"] or [],
                 }
 
                 updatedHistory.append(user_entry)

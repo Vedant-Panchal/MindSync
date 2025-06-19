@@ -1,5 +1,7 @@
 // lib/sse-client.ts
 
+import { parse } from "path";
+
 export async function* createSSEStream(
   url: string,
   query: string,
@@ -67,6 +69,11 @@ export async function* createSSEStream(
             if (parsed.event === "metadata" && parsed.data?.citations) {
               window.dispatchEvent(
                 new CustomEvent("citations", { detail: parsed.data.citations }),
+              );
+            }
+            if (parsed.event === "startStream") {
+              window.dispatchEvent(
+                new CustomEvent("startStream", { detail: parsed.data }),
               );
             }
             if (parsed?.message) {
