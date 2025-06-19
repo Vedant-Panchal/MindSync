@@ -97,6 +97,7 @@
     "react-resizable-panels": "^2.1.7",
     "react-speech-recognition": "^4.0.0",
     "recharts": "^2.15.2",
+    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "shiki": "^3.2.1",
     "sonner": "^2.0.3",

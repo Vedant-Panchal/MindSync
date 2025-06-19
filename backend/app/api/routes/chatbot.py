@@ -6,6 +6,7 @@ from datetime import date, datetime
 from uuid import uuid4
 from fastapi.responses import StreamingResponse
 from httpx import stream
+from huggingface_hub import from_pretrained_fastai
 from sqlalchemy import update
 from sympy import content
 from app.core.config import MODEL_VECTOR
@@ -15,7 +16,6 @@ from app.core.connection import db
 from fastapi.encoders import jsonable_encoder
 import json
 from loguru import logger
-
 from app.utils.otp_utils import (
     delete_data,
     get_history,
